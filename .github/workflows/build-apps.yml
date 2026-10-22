@@ -21,18 +21,26 @@ env:
 jobs:
   android:
     name: Android (APK + AAB)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # has the Android SDK installed (ubuntu-latest is moving to 26)
     timeout-minutes: 40
     env:
       KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with: { node-version: 22 }
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with: { distribution: temurin, java-version: 21 }
-      - uses: android-actions/setup-android@v3
+      - name: Android SDK (already on the machine)
+        run: |
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"; echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          SM=$(ls -d "$SDK"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | sort -V | tail -1)
+          [ -x "$SM" ] || { echo "::error::No sdkmanager under $SDK"; ls "$SDK" | sed 's/^/::error::/' ; exit 1; }
+          yes | "$SM" --licenses > /dev/null || true
+          "$SM" "platforms;android-36" "build-tools;36.0.0" "platform-tools" > /tmp/sdk.log 2>&1 || { tail -20 /tmp/sdk.log | sed 's/^/::error::/'; exit 1; }
+          echo "SDK: $SDK"
       - name: Game files (offline app build)
         run: |
           npm install --no-audit --no-fund
@@ -40,7 +48,8 @@ jobs:
       - name: Android project
         working-directory: app
         run: |
-          npx cap add android
+          set -o pipefail
+          npx cap add android 2>&1 | tee /tmp/step.log || { tail -25 /tmp/step.log | sed 's/^/::error::/'; exit 1; }
           npx capacitor-assets generate --android --iconBackgroundColor '#1e2350' --iconBackgroundColorDark '#1e2350' --splashBackgroundColor '#1e2350' --splashBackgroundColorDark '#1e2350'
           node scripts/patch-native.js android
           npx cap sync android
@@ -67,11 +76,13 @@ jobs:
         working-directory: app/android
         run: |
           chmod +x gradlew
+          set -o pipefail
           ./gradlew --no-daemon assembleRelease bundleRelease \
             -Pandroid.injected.signing.store.file="$GITHUB_WORKSPACE/signing/release.jks" \
             -Pandroid.injected.signing.store.password="${{ steps.key.outputs.pass }}" \
             -Pandroid.injected.signing.key.alias=patangwars \
-            -Pandroid.injected.signing.key.password="${{ steps.key.outputs.pass }}"
+            -Pandroid.injected.signing.key.password="${{ steps.key.outputs.pass }}" 2>&1 | tee /tmp/gradle.log \
+            || { grep -E "error:|What went wrong|FAILURE|Exception|> " /tmp/gradle.log | head -30 | sed 's/^/::error::/'; exit 1; }
       - name: Collect
         run: |
           V=$(node -p "require('./app/package.json').version")
@@ -90,10 +101,10 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 50
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: maxim-lobanov/setup-xcode@v1
         with: { xcode-version: latest-stable }
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with: { node-version: 22 }
       - name: Game files (offline app build)
         run: |
@@ -110,8 +121,11 @@ jobs:
         working-directory: app/ios/App
         run: |
           if [ -d App.xcworkspace ]; then SRC="-workspace App.xcworkspace"; else SRC="-project App.xcodeproj"; fi
+          set -o pipefail
           xcodebuild $SRC -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
-            -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | tee /tmp/xc.log | grep -E "error:|warning: .*deprecated|BUILD" | tail -40 \
+            || true
+          grep -q "BUILD SUCCEEDED" /tmp/xc.log || { grep -E "error:" /tmp/xc.log | head -30 | sed 's/^/::error::/'; tail -15 /tmp/xc.log | sed 's/^/::error::/'; exit 1; }
       - name: Package IPA
         run: |
           V=$(node -p "require('./app/package.json').version")
