@@ -44,7 +44,9 @@
     sideBonus: 0.2,
     // jhatka: a tunka in a pecha - one sharp jerk saws hard for a moment. Up to this much extra, fading in jhatkaT seconds,
     // at most one every jhatkaGap seconds (so tapping wildly, or a client claiming to tug every frame, gains nothing more).
-    jhatka: 0.9, jhatkaT: 0.3, jhatkaGap: 0.3 };   // the crossing must be clear of both kites' own ends to hook     // the crossing must be above the bottom fifth of both lines (not right down by someone's roof)
+    jhatka: 0.9, jhatkaT: 0.3, jhatkaGap: 0.3,
+    // v6.5: after a pecha lets go, the same two lines wait this long before they can hook again (no flickering re-hooks)
+    rehook: 1.5 };   // the crossing must be clear of both kites' own ends to hook     // the crossing must be above the bottom fifth of both lines (not right down by someone's roof)
 
   /** May these two lines START a pecha now? (An ongoing one always may continue.) `a.hooks` / `b.hooks` = how many
    *  pechas each line is already hooked in, counted by the caller every frame. */
@@ -69,6 +71,7 @@
 
     st.started = false;
     const kiteGap = len(sub(A.p, B.p));
+    if (!st.on && st.cool > 0) { st.cool -= dt; return { contact: false }; }
     if (!st.on) {
       if (c.dist > rad || offEnd) return { contact: false };
       if (kiteGap > cfg.startDist || c.s < cfg.minS || c.t < cfg.minS) return { contact: false };
@@ -90,19 +93,19 @@
     // only slides off a tip - "pecha nikal gaya" - when a kite has come BACK to its own side (pen < 0).
     const deep = st.locked && pen > rad;
     st.slipT = (st.locked && pen < 0 && (c.s > cfg.slipEnd || c.t > cfg.slipEnd)) ? (st.slipT || 0) + dt : 0;
-    if (st.slipT > cfg.slipHold) { st.on = false; return { contact: false, released: 'slip' }; }
+    if (st.slipT > cfg.slipHold) { st.on = false; st.cool = cfg.rehook; return { contact: false, released: 'slip' }; }
     if (!st.locked) {
       // lines lying almost in one plane (two kites at the same distance, the usual rooftop case) can rub without one
       // ever "pressing through" the other - that used to leave the pair brushing forever, neither hooked nor
       // released. Touching for a moment is enough: the manjha bites and the pecha is on.
       st.brushT = c.dist <= rad ? (st.brushT || 0) + dt : 0;
       if (pen > -0.05 || st.brushT > 0.2) { st.locked = true; st.started = true; st.aAbove = c.c1[2] >= c.c2[2]; }
-      else if (c.dist > rad * 1.5) { st.on = false; return { contact: false, released: 'brush' }; }
+      else if (c.dist > rad * 1.5) { st.on = false; st.cool = cfg.rehook; return { contact: false, released: 'brush' }; }
     }
     // backed out the way it came: clearly back on its own side AND held clear for a moment
     st.clearT = (pen < 0 && c.dist > cfg.release) ? (st.clearT || 0) + dt : 0;
-    if (st.clearT > cfg.releaseHold) { st.on = false; return { contact: false, released: 'back' }; }
-    if ((c.dist > cfg.apart && pen < 0) || kiteGap > cfg.keepDist) { st.on = false; return { contact: false, released: 'apart' }; }
+    if (st.clearT > cfg.releaseHold) { st.on = false; st.cool = cfg.rehook; return { contact: false, released: 'back' }; }
+    if ((c.dist > cfg.apart && pen < 0) || kiteGap > cfg.keepDist) { st.on = false; st.cool = cfg.rehook; return { contact: false, released: 'apart' }; }
 
     st.t += dt;
     const sA = Math.max(c.s, 0.25), sB = Math.max(c.t, 0.25);
@@ -143,7 +146,7 @@
     // lines hanging apart without touching for a while: the pecha is over (it used to stay "on" in this limbo - no
     // sawing, no release - which is the stuck-in-the-middle pecha). A fresh touch starts a new one at once.
     st.gapT = touching ? 0 : (st.gapT || 0) + dt;
-    if (st.gapT > 1.2) { st.on = false; return { contact: false, released: 'back' }; }
+    if (st.gapT > 1.2) { st.on = false; st.cool = cfg.rehook; return { contact: false, released: 'back' }; }
     if (!touching) return { contact: false, engaged: true };
     st.touchT += dt;
 

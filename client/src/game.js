@@ -53,7 +53,8 @@
   const LAYOUTS = { shared: { label: 'Shared screen', note: 'One wide view of both kites - you fly side by side.' }, split: { label: 'Split screen', note: 'Each player gets their own half and camera.' } };
   const KITE_VIS = 5.6;   // how much bigger than life a far kite is drawn (readability at distance); near kites are compressed
   const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0;
-  const real = x => !!x && x.ctrl !== 'bot';   // a person (here or online), not a bot: only their events reach the feed
+  const real = x => !!x && x.ctrl !== 'bot';
+  const person = x => real(x) || !!(x && x.autoYou);   // autoYou: a test flying 'You' on autopilot still counts as the person   // a person (here or online), not a bot: only their events reach the feed
   const pointsOf = p => p.score.cut * POINTS.cut + p.score.caught * POINTS.caught + p.score.lost * POINTS.lost + (p.score.bonus || 0);
 
   /* ---------------- catalog & scenes ---------------- */
@@ -801,7 +802,7 @@
       // only kites in reach of this roof: a bot across the city no longer flies all the way over to fight you
       // v6.4: a kite already in a pecha can be joined (up to PECHA.CFG.maxHooks lines on it): always to help a team-mate
       // in a Mohalla, now and then in a Festival (never on Easy - two bots on you at once is a Normal/Hard thing)
-      const joinP = { easy: 0, normal: 0.22, hard: 0.4 }[G.diff] ?? 0.22;
+      const joinP = { easy: 0, normal: 0, hard: 0.15 }[G.diff] ?? 0;   // v6.5: two bots on one line is rare (players found it chaotic)
       const canJoin = o => { const bw = busyWith(o.kite); if (!bw || bw === me) return true; if ((o.kite.hooks | 0) >= PECHA.CFG.maxHooks) return false;
         return G.teams ? bw.owner && teamOf(bw.owner) === teamOf(p) : Math.random() < joinP; };
       const foes = G.players.filter(o => o !== p && foes2(p, o) && o.kite && !o.kite.free && dist(o) < 85 && canJoin(o));
@@ -1618,7 +1619,7 @@
   setInterval(() => { if (!$('#menu').classList.contains('hidden')) { renderBadges(); if (!$('#loginPop').classList.contains('hidden')) renderLogin(); } }, 30000);
   $('#shopClose').onclick = () => { $('#shop').classList.add('hidden'); $('#buyPop').classList.add('hidden'); };
   // Esc closes the topmost menu panel
-  addEventListener('keydown', e => { if (e.key !== 'Escape' || G) return; for (const id of ['#buyPop', '#settings', '#shop', '#coll', '#lb', '#trophies', '#how']) if (!$(id).classList.contains('hidden')) { $(id).classList.add('hidden'); return; } });
+  addEventListener('keydown', e => { if (e.key !== 'Escape' || G) return; for (const id of ['#pickPop', '#buyPop', '#settings', '#shop', '#coll', '#lb', '#trophies', '#how']) if (!$(id).classList.contains('hidden')) { $(id).classList.add('hidden'); return; } });
   $('#shopBtn').onclick = () => openShop(); $('#walletBtn').onclick = () => openShop('crate');
   /* ---- loot collection ---- */
   let collType = 'all';
@@ -2026,6 +2027,9 @@
       if (G.teams && teamOf(pa) === teamOf(pb)) continue;   // team-mates' strings fly together and never fight
       const map = a._pst || (a._pst = new Map()), st = map.get(b) || (map.set(b, {}), map.get(b));
       if (!PECHA.canHook(a, b, st)) { st.on = false; continue; }   // both lines already as tangled as a line can be
+      // v6.5: a bot never piles onto a person's line that is already in a pecha - the second pecha is only ever the
+      // person's own choice (flying into someone else's). Keeps "pecha within pecha" rare and never forced on you.
+      if (!st.locked && !G.online && ((person(pa) && !person(pb) && a.hooks > 0) || (person(pb) && !person(pa) && b.hooks > 0))) { st.on = false; continue; }
       const wasLocked = !!st.locked;
       const r = PECHA.step(a, b, DT, st, G.online ? PECHA_VIEW : PECHA.CFG);
       if (r.released) st.lastRelease = r.released;
@@ -2084,7 +2088,7 @@
     if (v.replaycam) return replayCam(v, w, h, dt);
     // the camera stands behind the flier (shared 2-player view: behind the middle of both fliers) and keeps every
     // kite it's following in frame; the shared view also zooms out by itself when the two kites drift apart
-    const c = v.cam = v.cam || { yaw: 0, pitch: 0.35, shake: 0, zoom: 1, auto: 1 };
+    const c = v.cam = v.cam || { yaw: 0, pitch: 0.35, shake: 0, zoom: clamp(+saved.zoomPref || 1, ZOOM_MIN, ZOOM_MAX), auto: 1 };   // v6.5: your zoom is remembered
     let A, targets;
     if (v.shared) {
       const hs = G.viewers; A = [0, 1, 2].map(i => hs.reduce((s, p) => s + anchorOf(p)[i], 0) / hs.length);
@@ -2142,7 +2146,7 @@
     };
   }
   function zoomAll(m) { G.viewers.forEach(v => zoomBy(v, m)); zoomBy(sharedView, m); }
-  function zoomBy(v, mul) { const c = v && v.cam; if (c) c.zoom = clamp((c.zoom ?? 1) * mul, ZOOM_MIN, ZOOM_MAX); }
+  function zoomBy(v, mul) { const c = v && v.cam; if (c) { c.zoom = clamp((c.zoom ?? 1) * mul, ZOOM_MIN, ZOOM_MAX); if (!v.shared) { saved.zoomPref = +c.zoom.toFixed(3); clearTimeout(zoomBy.t); zoomBy.t = setTimeout(save, 400); } } }
   const toCam = (cam, q) => { const r = [q[0] - cam.pos[0], q[1] - cam.pos[1], q[2] - cam.pos[2]]; return [r[0] * cam.right[0] + r[1] * cam.right[1], r[0] * cam.up[0] + r[1] * cam.up[1] + r[2] * cam.up[2], r[0] * cam.fwd[0] + r[1] * cam.fwd[1] + r[2] * cam.fwd[2]]; };
   const scr = (cam, c) => ({ x: cam.cx + cam.fl * c[0] / c[2], y: cam.cy - cam.fl * c[1] / c[2], d: c[2] });
   const project = (cam, q) => { const c = toCam(cam, q); return c[2] < 0.5 ? null : scr(cam, c); };
@@ -2849,10 +2853,10 @@
         const hand = viewer._hands && viewer._hands.get(p), gm = kiteGeom(cam, k, pts), knot = gm && gm.px > 6 && gm.cut >= 0 ? { ...gm.knot, i: gm.cut } : null;
         const night = G.sc.nightDrawn || G.sc.night;
         items.push({ d: k.p[0] + 1, f: () => { if (night && !QUAL.low) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; polyline(cam, pts, k.thread.color, own ? 5 : 3.5, 0.16, hand, knot); ctx.restore(); }
-          const inMine = pd && (own || k._pechaDraw.some(d => mine(d.other.owner))), lw = (own ? 1.6 : 1.1) * (inMine ? 1.7 : 1);
+          const inMine = pd && (own || k._pechaDraw.some(d => mine(d.other.owner))), lw = (own ? 1.6 : 1.1) * (inMine ? 1.1 : 1);   // v6.5: barely thicker in a pecha (1.7x was too heavy)
           // in YOUR pecha the two dor must never be confused (both are often red/pink manjha): yours has a white edge,
           // theirs a dark one
-          if (inMine) polyline(cam, pts, own ? 'rgba(255,255,255,.85)' : 'rgba(10,12,24,.75)', lw + (own ? 2.6 : 2.2), own ? 0.75 : 0.65, hand, knot);
+          if (inMine) polyline(cam, pts, own ? 'rgba(255,255,255,.8)' : 'rgba(10,12,24,.6)', lw + 1.1, own ? 0.6 : 0.5, hand, knot);   // a slim edge, just enough to tell yours from theirs
           polyline(cam, pts, k.hot > 0 ? '#ff5a5a' : k.thread.color, lw, inMine ? 1 : own ? 0.95 : 0.75, hand, knot); } });
       }
       if (k.trail) items.push({ d: k.p[0] + 1, f: () => polyline(cam, k.trail.p, k.thread.color, 1.2, 0.85) });
@@ -3523,8 +3527,36 @@
   $('#stagePrev').onclick = () => stageStep(-1); $('#stageNext').onclick = () => stageStep(1);
   { let x0 = null; const art = $('#stageArt');   // swipe the stage left/right on a phone
     art.addEventListener('pointerdown', e => { x0 = e.clientX; }); art.addEventListener('pointerup', e => { if (x0 != null && Math.abs(e.clientX - x0) > 40) stageStep(e.clientX < x0 ? 1 : -1); x0 = null; }); }
-  $('#hubDiff').onclick = () => { const ks = Object.keys(DIFFICULTY); saved.diff = ks[(ks.indexOf(saved.diff) + 1) % ks.length]; save(); SFX.ui(); renderHub(); };
-  $('#hubMode').onclick = () => { const i = HUB_MODES.findIndex(m => m[0] === saved.hubMode); saved.hubMode = HUB_MODES[(i + 1) % HUB_MODES.length][0]; save(); SFX.ui(); renderHub(); };
+  /* v6.5: Mode and Bots open a picker - every choice as a card, the current one marked - instead of silently cycling */
+  const flame = n => `<span class="pk-flames">${'<i></i>'.repeat(n)}${'<i class="off"></i>'.repeat(3 - n)}</span>`;
+  function pickArt(id) {
+    const ks = CAT.filter(e => e.src && !e.recipe), k = i => ks.length ? `<img src="${ks[(i * 13 + 5) % ks.length].src}" alt="">` : '';
+    if (id === 'festival') return `<div class="pk-art pk-fest">${k(0)}${k(1)}${k(2)}${k(3)}${k(4)}</div>`;
+    if (id === 'single') return `<div class="pk-art pk-duel">${k(6)}${k(7)}<svg viewBox="0 0 100 60" aria-hidden="true"><path d="M20 58 62 6M80 58 38 6" stroke="#fff" stroke-width="1.6" fill="none"/><circle cx="50" cy="21" r="4" fill="#ffd24d"/></svg></div>`;
+    return `<div class="pk-art pk-two"><svg viewBox="0 0 100 60" aria-hidden="true"><circle cx="34" cy="20" r="9" fill="#ffd24d" stroke="#2a1606" stroke-width="2"/><path d="M18 58c1-14 7-21 16-21s15 7 16 21Z" fill="#e8402f" stroke="#2a1606" stroke-width="2"/><circle cx="66" cy="20" r="9" fill="#ffd24d" stroke="#2a1606" stroke-width="2"/><path d="M50 58c1-14 7-21 16-21s15 7 16 21Z" fill="#4cb7ff" stroke="#2a1606" stroke-width="2"/></svg></div>`;
+  }
+  function openPick(kind) {
+    const isMode = kind === 'mode', cur = isMode ? saved.hubMode : saved.diff;
+    const opts = isMode ? HUB_MODES.map(([id, name, note]) => ({ id, name, note, art: pickArt(id) }))
+      : Object.entries(DIFFICULTY).map(([id, d], i) => ({ id, name: d.label, note: d.note, art: `<div class="pk-art pk-diff">${flame(i + 1)}</div>` }));
+    $('#pickTitle').textContent = isMode ? 'How do you want to fly?' : 'How good are the bots?';
+    $('#pickBody').className = 'pick-grid' + (isMode ? '' : ' pick-diff');
+    $('#pickBody').innerHTML = opts.map(o => `<button class="pk ${o.id === cur ? 'on' : ''}" role="radio" aria-checked="${o.id === cur}" data-id="${o.id}">${o.art}<b>${esc(o.name)}</b><small>${esc(o.note)}</small><em class="pk-check" aria-hidden="true">&check;</em></button>`).join('');
+    $$('#pickBody .pk').forEach(b => b.onclick = () => {
+      if (isMode) saved.hubMode = b.dataset.id; else saved.diff = b.dataset.id;
+      save(); SFX.ui(); buzz(15);
+      $$('#pickBody .pk').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); });
+      renderHub(); setTimeout(() => $('#pickPop').classList.add('hidden'), 220);   // a moment to see the choice land
+    });
+    $('#pickPop').classList.remove('hidden');
+  }
+  $('#hubDiff').onclick = () => { SFX.ui(); openPick('diff'); };
+  $('#hubMode').onclick = () => { SFX.ui(); openPick('mode'); };
+  $('#pickClose').onclick = () => $('#pickPop').classList.add('hidden');
+  // the rail lights up the section you are in
+  { const map = [['#shop', '#shopBtn'], ['#select', '#railKites'], ['#mohalla', '#mohallaBtn'], ['#online', '#onlineBtn'], ['#nameScreen', '#onlineBtn']];
+    const sync = () => { const open = map.find(([scr]) => !$(scr).classList.contains('hidden')); $$('.hub-rail .rail-b').forEach(b => b.classList.toggle('on', open ? '#' + b.id === open[1] : b.id === 'railHome')); };
+    const mo = new MutationObserver(sync); for (const [scr] of map) mo.observe($(scr), { attributes: true, attributeFilter: ['class'] }); sync(); }
   function hubPlay(mode = saved.hubMode) {
     if (econ().loading) { toast('Loading your kites&hellip;'); return; }
     ensureLoadout(mode === 'two');
@@ -3542,6 +3574,14 @@
   $('#pauseBtn').onclick = () => { if (G && !G.swapPlayer && !G.online) G.paused = !G.paused; };
   $('#botPlus').onclick = () => G && addBot(); $('#botMinus').onclick = () => G && removeBot();
   $('#zoomIn').onclick = () => G && zoomAll(1.15);
+  // phones/tablets (v6.5): a +/- pill on the right edge, and two-finger pinch on the sky (button controls; with swipe
+  // controls a second finger is the tunka, so the pill does the zooming there)
+  $('#tzIn').onclick = () => { if (G) { zoomAll(1.18); SFX.ui(); } };
+  $('#tzOut').onclick = () => { if (G) { zoomAll(1 / 1.18); SFX.ui(); } };
+  { let pd = 0; const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    canvas.addEventListener('touchstart', e => { if (e.touches.length === 2 && saved.touchMode !== 'swipe') { pd = dist(e.touches); e.preventDefault(); } }, { passive: false });
+    canvas.addEventListener('touchmove', e => { if (pd && e.touches.length === 2 && G) { const d = dist(e.touches); if (d > 0) { zoomAll(clamp(d / pd, 0.8, 1.25)); pd = d; } e.preventDefault(); } }, { passive: false });
+    canvas.addEventListener('touchend', e => { if (e.touches.length < 2) pd = 0; }); }
   $('#zoomOut').onclick = () => G && zoomAll(1 / 1.15);
   $('#landBtn').onclick = () => G && requestLand(G.viewers[0]);
   saved.replay = saved.replay !== false; saved.party = saved.party !== false;
@@ -3797,7 +3837,7 @@
     try { PL.SplashScreen && setTimeout(() => PL.SplashScreen.hide(), 300); } catch (e) {}
     // back: close the top panel -> leave the match (pausing it first) -> on the home screen, leave the app
     try { PL.App && PL.App.addListener('backButton', () => {
-      for (const id of ['#rewardPop', '#buyPop', '#loginPop', '#settings', '#shop', '#coll', '#lb', '#trophies', '#how', '#maker', '#charMaker', '#mohalla', '#select']) {
+      for (const id of ['#rewardPop', '#pickPop', '#buyPop', '#loginPop', '#settings', '#shop', '#coll', '#lb', '#trophies', '#how', '#maker', '#charMaker', '#mohalla', '#select']) {
         const el = $(id); if (el && !el.classList.contains('hidden')) { if (id === '#select') $('#selBack').click(); else if (id === '#mohalla') $('#mhClose').click(); else if (id === '#settings') $('#setClose').click(); else el.classList.add('hidden'); return; }
       }
       if (G) { if (G.over) return $('#resMenu').click(); if (!G.paused) { G.paused = true; toast('Paused - press back again to go home'); return; } return endMatch(); }

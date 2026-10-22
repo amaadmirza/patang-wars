@@ -5,10 +5,24 @@
 (Pehle naam: Kite Fight. Logo: `client/assets/brand/logo.svg`, emblem: `emblem.svg`, app icon: `icon.svg`.
 Doosre naam/logo concepts: `client/assets/brand/concepts/` — `python3 client/tools/make-logos.py` se dobara banti hain.)
 
-## Phone app (Android APK + iPhone IPA)
+## Phone app (Android APK)
 
 `app/` mein poori game ka **offline** phone app hai (Capacitor 8). GitHub par muft banta hai — Android Studio ya Mac ke
 baghair: **`app/README-APP.md`** dekhein (qadam ba qadam). Workflow: `.github/workflows/build-apps.yml`.
+
+## v6.5
+- **Pecha ki awaaz** badli: pehle tez "beep" aur bareek si-si wali hiss thi; ab halki dor ki ragad (neechi, narm, thodi
+  thar-thar) aur pecha lagne par ek chhoti si "thap". Kaafi kam shor.
+- **Dor patli**: pecha mein lines ~40% patli (apni 1.6 px, doosron ki 1.1 px), halka sa saaya.
+- **Pecha ke andar pecha kam**: ek line zyada se zyada **2** pechon mein (ek waqt mein 3 lines). Koi bot aap ki us line par
+  nahi chadhta jo pehle se pecha mein hai — doosra pecha sirf tab jab **aap khud** kisi ke pecha mein ghusein. Pecha khulne
+  ke baad 1.5 s tak wahi do lines dobara nahi phansti. Bots ka doosre ke pecha mein ghusna: Easy/Normal par band, Hard par kam.
+  (Test: 4 minute festival, 10 patangein — aap ki patang 3-line pecha mein **0 s**, pehle 6–12 s.)
+- **Mobile par zoom**: daayen kinare **+ / −** buttons aur do ungliyon se **pinch**. Zoom yaad rehta hai.
+- **Menu aur icons naye**: rang-daar game icons, baayen rail par jis section mein hain wo peela chamakta hai, Mode aur Bots
+  ab ek tasveer-wale picker se (har option nazar aata hai, chuna hua tick ke saath). Shop, Patang, Mohalla, Settings,
+  Trophies, Collection — sab ek hi game style: frame, gol laal close button, peele tabs, chuni cheez par tick. Dark aur Light dono.
+- Phone app ab **sirf Android** banti hai (iPhone build band).
 
 ## v6.4
 

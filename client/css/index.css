@@ -1189,3 +1189,107 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
 @keyframes live-blink{50%{opacity:.35}}
 @media (prefers-reduced-motion:reduce){.rail-live{animation:none}}
 @media (max-height:430px) and (orientation:landscape){.hub .rail-b.rail-online span{display:block;font-size:9px;font-weight:800}.hub .rail-b.rail-online svg{width:38%;height:38%}}
+/* v6.5 touch zoom: a slim +/- pill on the right edge, in open sky away from FLY / KHAINCH / DHEEL */
+#zoomPill{display:none;position:absolute;right:max(10px,env(safe-area-inset-right));top:42%;transform:translateY(-50%);flex-direction:column;align-items:center;
+  background:rgba(12,18,32,.55);border:1px solid rgba(255,255,255,.18);border-radius:22px;padding:3px;z-index:6;backdrop-filter:blur(4px)}
+#zoomPill button{width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.1);color:#fff;font:700 22px/1 Inter,system-ui,sans-serif;cursor:pointer}
+#zoomPill button:active{background:rgba(255,200,61,.5)}
+#zoomPill i{width:18px;height:1px;background:rgba(255,255,255,.25);margin:3px 0}
+@media (pointer:coarse){#game:not(.hidden) #zoomPill{display:flex}}
+#game.replaying #zoomPill{display:none!important}
+
+/* ======================================================================================================
+ * v6.5 GAME SKIN - every menu screen in the hub's style: framed panels with a cream edge, heavy titles, raised tabs,
+ * rarity-framed cards with a clear "selected" state, 3D buttons. Dark and light variants (Settings -> Display -> Theme).
+ * ====================================================================================================== */
+:root{--sk-panel:linear-gradient(180deg,#2c3070 0%,#1d2050 100%);--sk-edge:#fff1c4;--sk-edge2:rgba(255,241,196,.35);--sk-fg:#fff8ea;--sk-muted:#c9c6e6;
+  --sk-card:linear-gradient(180deg,#343a86,#262a62);--sk-card-edge:rgba(255,241,196,.22);--sk-tab:#3a4090;--sk-tab-fg:#e9e6ff;--sk-shadow:#0c0e2a;--sk-row:rgba(255,255,255,.06)}
+:root[data-theme="light"]{--sk-panel:linear-gradient(180deg,#fffaf0 0%,#f5e7c9 100%);--sk-edge:#e0a93a;--sk-edge2:rgba(170,110,20,.35);--sk-fg:#2a1606;--sk-muted:#6e5a3e;
+  --sk-card:linear-gradient(180deg,#ffffff,#fbefd6);--sk-card-edge:rgba(170,110,20,.3);--sk-tab:#f0deb8;--sk-tab-fg:#4a3218;--sk-shadow:#b98a3c;--sk-row:rgba(120,80,20,.07)}
+:is(#shop,#coll,#lb,#trophies,#how,#settings,#mohalla,#buyPop,#loginPop,#pickPop,#online,#nameScreen,#swap,#results,#maker,#charMaker) .panel{
+  background:var(--sk-panel)!important;color:var(--sk-fg);border:3px solid var(--sk-edge)!important;border-radius:20px!important;
+  box-shadow:0 6px 0 var(--sk-shadow),0 20px 50px rgba(0,0,0,.45)!important}
+:is(#shop,#coll,#lb,#trophies,#how,#settings,#mohalla,#buyPop,#loginPop,#pickPop,#online,#nameScreen,#swap,#results,#maker,#charMaker) .panel-hd h2,
+#select .topbar h2{font-weight:900;font-style:italic;letter-spacing:-.01em;color:var(--sk-fg);text-shadow:0 2px 0 rgba(0,0,0,.18)}
+:is(#shop,#coll,#lb,#trophies,#how,#settings,#mohalla,#buyPop,#loginPop,#pickPop,#online,#swap,#maker,#charMaker) .muted,
+:is(#shop,#coll,#lb,#trophies,#how,#settings,#mohalla,#online) small{color:var(--sk-muted)}
+/* the round red close button, like a mobile game */
+:is(#shop,#coll,#lb,#trophies,#how,#settings,#mohalla,#loginPop,#pickPop,#online,#swap,#maker,#charMaker) .x{
+  width:38px!important;height:38px!important;border-radius:50%!important;background:linear-gradient(180deg,#ff6a55,#d8321f)!important;color:#fff!important;
+  border:2.5px solid #fff!important;box-shadow:0 3px 0 #7a1608!important;font-size:22px!important;font-weight:900;line-height:1!important;display:grid;place-items:center;padding:0!important}
+:is(#shop,#coll,#lb,#trophies,#how,#settings,#mohalla,#loginPop,#pickPop,#online,#swap,#maker,#charMaker) .x:active{transform:translateY(2px);box-shadow:0 1px 0 #7a1608!important}
+/* tabs and filter chips: raised; the chosen one is yellow */
+:is(#shop,#coll,#lb,#settings,#select,#swap,#mohalla,#online) :is(.seg,.chips) button,#setNav button{
+  background:var(--sk-tab)!important;color:var(--sk-tab-fg)!important;border:0!important;border-radius:11px!important;font-weight:800!important;
+  box-shadow:0 3px 0 var(--sk-shadow)!important;transition:transform .08s}
+:is(#shop,#coll,#lb,#settings,#select,#swap,#mohalla,#online) :is(.seg,.chips) button.on,#setNav button.on{
+  background:linear-gradient(180deg,#ffe27a,#f5a623)!important;color:#3a1d00!important;box-shadow:0 3px 0 #9a5a00!important}
+:is(#shop,#coll,#lb,#settings,#select,#swap,#mohalla,#online) :is(.seg,.chips) button:active{transform:translateY(2px)}
+:is(#shop,#coll,#lb,#settings,#select,#swap) .seg{background:transparent!important;gap:6px;padding:0!important;border:0!important}
+/* item cards (shop, kites, collection, swap): framed, rarity-coloured edge, a ticked yellow ring when chosen */
+:is(#shop,#coll,#select,#swap) .grid .it{background:var(--sk-card)!important;border:2px solid var(--sk-card-edge)!important;border-radius:14px!important;
+  box-shadow:0 3px 0 var(--sk-shadow);transition:transform .1s}
+:is(#shop,#coll,#select,#swap) .grid .it:active{transform:scale(.96)}
+:is(#shop,#coll,#select,#swap) .grid .it span{color:var(--sk-fg);font-weight:700}
+#shop .shop-it.r-rare{border-color:#4cb7ff!important}#shop .shop-it.r-epic{border-color:#b98cff!important}#shop .shop-it.r-legendary{border-color:#ffb627!important;box-shadow:0 3px 0 var(--sk-shadow),0 0 14px rgba(255,182,39,.35)}
+:is(#select,#swap) .grid .it.on,#select .th.on,#select .sc.on,#mohalla .th.on{position:relative;border:3px solid #ffc83d!important;box-shadow:0 0 0 3px rgba(255,200,61,.35),0 3px 0 #9a5a00!important}
+:is(#select,#swap) .grid .it.on::after,#select .th.on::after,#mohalla .th.on::after{content:"\2713";position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;
+  background:#2fa84a;color:#fff;font:900 13px/22px Inter,system-ui,sans-serif;text-align:center;border:2px solid #fff;z-index:2}
+#select .th,#mohalla .th{background:var(--sk-card)!important;border:2px solid var(--sk-card-edge)!important;border-radius:12px!important;color:var(--sk-fg);box-shadow:0 3px 0 var(--sk-shadow)}
+#select .card,#mohalla .card,#online .card{background:rgba(0,0,0,.12)!important;border:1.5px solid var(--sk-edge2)!important;border-radius:16px!important}
+:root[data-theme="light"] :is(#select,#mohalla,#online) .card{background:rgba(255,255,255,.5)!important}
+/* the kite / gear screen frame */
+#select{background:radial-gradient(130% 90% at 50% 110%,#ff9a52 0%,#d9607a 28%,#5a3f8a 55%,#1e2350 85%)!important}
+:root[data-theme="light"] #select{background:radial-gradient(130% 90% at 50% 110%,#ffd9a0 0%,#f7c3a8 30%,#e8d7f0 60%,#f6efe2 90%)!important}
+#select .topbar{background:rgba(20,22,48,.7)!important;border-bottom:2px solid var(--sk-edge2)}
+:root[data-theme="light"] #select .topbar{background:rgba(255,250,240,.85)!important}
+/* buttons: 3D */
+:is(#shop,#coll,#lb,#trophies,#how,#settings,#mohalla,#buyPop,#loginPop,#pickPop,#online,#nameScreen,#swap,#results,#select,#maker,#charMaker) .cta{
+  background:linear-gradient(180deg,#ffe27a,#ffc83d 45%,#f39a12)!important;color:#3a1d00!important;border:2px solid #fff1c4!important;border-radius:13px!important;
+  font-weight:900!important;box-shadow:0 4px 0 #9a5a00!important}
+:is(#shop,#coll,#lb,#trophies,#how,#settings,#mohalla,#buyPop,#loginPop,#pickPop,#online,#nameScreen,#swap,#results,#select,#maker,#charMaker) .cta:active{transform:translateY(3px);box-shadow:0 1px 0 #9a5a00!important}
+:is(#shop,#coll,#lb,#trophies,#how,#settings,#mohalla,#buyPop,#loginPop,#online,#nameScreen,#swap,#results,#select,#maker,#charMaker) .ghost{
+  background:var(--sk-tab)!important;color:var(--sk-tab-fg)!important;border:0!important;border-radius:12px!important;font-weight:800!important;box-shadow:0 3px 0 var(--sk-shadow)!important}
+#settings .set-row,#settings .tog,#trophies .trophy,#trophies .tstats>div,#lb .lb-list li,#mohalla .mh-rung{background:var(--sk-row)!important;border-radius:12px!important;border:1px solid var(--sk-edge2)!important}
+#trophies .trophy.got{border-color:#ffc83d!important;background:rgba(255,200,61,.14)!important}
+#mohalla .mh-rung.next{border:2.5px solid #ffc83d!important;background:rgba(255,200,61,.12)!important}
+
+/* ---- the hub, refreshed: filled icons, chunky event tiles ---- */
+.hub svg.gi{fill:initial;stroke:none;stroke-width:initial;overflow:visible}
+.hub .rail-b{background:radial-gradient(circle at 50% 30%,#4b5196,#262a5a)!important;border:2.5px solid rgba(255,241,196,.45)!important;box-shadow:0 4px 0 #0c0e2a!important}
+.hub .rail-b svg.gi{width:62%;height:62%;filter:drop-shadow(0 2px 0 rgba(0,0,0,.25))}
+.hub .rail-b.on{background:radial-gradient(circle at 50% 30%,#ffe27a,#f0a020)!important;border-color:#fff!important;box-shadow:0 4px 0 #9a5a00,0 0 0 4px rgba(255,200,61,.3)!important}
+.hub .rail-b.on::after{content:"";position:absolute;right:-9px;top:50%;width:0;height:0;border:7px solid transparent;border-left-color:#ffc83d;transform:translateY(-50%)}
+.hub .rail-b:active{transform:translateY(3px) scale(.97);box-shadow:0 1px 0 #0c0e2a!important}
+.hub .rail-b.rail-online:not(.on){background:radial-gradient(circle at 50% 30%,#5fe08a,#1f8a45)!important;border-color:#d8ffe4!important}
+.hub .ev-b svg.gi{width:clamp(40px,5.2vw,50px);height:clamp(40px,5.2vw,50px);padding:7px;border-radius:14px;background:linear-gradient(180deg,#4b5196,#2a2e66);
+  border:2px solid rgba(255,241,196,.4);box-shadow:0 4px 0 #0c0e2a}
+.hub .ev-b:active svg.gi{transform:translateY(3px);box-shadow:0 1px 0 #0c0e2a}
+.hub .ev-b span{font-weight:800}
+.hub .side-b svg.gi{width:24px;height:24px}
+.hub .hub-gear svg.gi{width:26px;height:26px}
+.hub .hub-gear{background:radial-gradient(circle at 50% 30%,#4b5196,#262a5a)!important;box-shadow:0 3px 0 #0c0e2a}
+@media (max-height:430px) and (orientation:landscape){.hub .ev-b svg.gi{width:36px;height:36px;padding:5px}}
+
+/* ---- the Mode / Bots picker ---- */
+.pick-panel{width:min(720px,94vw);padding:14px 16px 18px}
+.pick-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:8px}
+.pk{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 8px 12px;border-radius:16px;cursor:pointer;font:inherit;color:var(--sk-fg);
+  background:var(--sk-card);border:2.5px solid var(--sk-card-edge);box-shadow:0 4px 0 var(--sk-shadow);transition:transform .1s}
+.pk:active{transform:translateY(3px)}
+.pk b{font-size:17px;font-weight:900;font-style:italic}.pk small{font-size:12px;color:var(--sk-muted);text-align:center;line-height:1.3}
+.pk.on{border-color:#ffc83d;box-shadow:0 0 0 4px rgba(255,200,61,.35),0 4px 0 #9a5a00;background:linear-gradient(180deg,rgba(255,200,61,.25),rgba(255,200,61,.06)),var(--sk-card)}
+.pk-check{display:none;position:absolute;top:-10px;right:-10px;width:28px;height:28px;border-radius:50%;background:#2fa84a;color:#fff;border:2.5px solid #fff;font:900 15px/24px Inter,system-ui,sans-serif;text-align:center;font-style:normal}
+.pk.on .pk-check{display:block;animation:pk-in .25s cubic-bezier(.2,1.6,.4,1)}
+@keyframes pk-in{from{transform:scale(0)}to{transform:scale(1)}}
+.pk-art{position:relative;width:100%;height:clamp(64px,13vh,110px);border-radius:11px;overflow:hidden;background:linear-gradient(180deg,#6fb6ff,#a9d6ff 70%,#e9d3a8 70%)}
+.pk-art img{position:absolute;width:30%;filter:drop-shadow(0 4px 4px rgba(0,0,0,.3))}
+.pk-fest img:nth-child(1){left:6%;top:8%;width:24%}.pk-fest img:nth-child(2){left:36%;top:2%;width:28%}.pk-fest img:nth-child(3){right:6%;top:10%;width:24%}.pk-fest img:nth-child(4){left:20%;top:38%;width:20%}.pk-fest img:nth-child(5){right:22%;top:40%;width:18%}
+.pk-duel img:nth-child(1){left:14%;top:6%;width:30%}.pk-duel img:nth-child(2){right:14%;top:6%;width:30%}.pk-duel svg,.pk-two svg{position:absolute;inset:0;width:100%;height:100%}
+.pk-two{background:linear-gradient(180deg,#ffb36b,#ffd59a 70%,#e9d3a8 70%)}
+.pick-diff .pk-art{display:grid;place-items:center;background:linear-gradient(180deg,#3a2a6a,#5a3f8a)}
+.pk-flames{display:flex;gap:6px}.pk-flames i{width:24px;height:32px;background:radial-gradient(ellipse at 50% 80%,#ffd24d 25%,#ff7a2a 60%,transparent 62%);clip-path:polygon(50% 0,80% 40%,100% 70%,85% 100%,15% 100%,0 70%,20% 40%)}
+.pk-flames i.off{filter:grayscale(1) opacity(.3)}
+@media (max-height:430px) and (orientation:landscape){.pick-panel{padding:10px 12px 12px}.pk small{display:none}.pk-art{height:72px}}
+@media (orientation:portrait) and (max-width:560px){.pick-grid{grid-template-columns:1fr}.pk{flex-direction:row;text-align:left}.pk-art{width:110px;flex:none;height:64px}}
+@media (prefers-reduced-motion:reduce){.pk.on .pk-check{animation:none}}

@@ -1,6 +1,6 @@
 {
   "name": "kite-fight",
-  "version": "1.6.4",
+  "version": "1.6.5",
   "private": true,
   "description": "Patang Wars - Basant rooftop kite fighting. Node server: serves the built game and keeps players' records.",
   "license": "UNLICENSED",

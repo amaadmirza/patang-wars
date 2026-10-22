@@ -43,7 +43,7 @@
       for (let i = 0; i < d.length; i++) { const w = Math.random() * 2 - 1; b = 0.97 * b + 0.03 * w; d[i] = 0.6 * w + 2.5 * b; }   // white + a little brown: softer, more natural hiss
       wind = noiseLoop('lowpass', 380, 0.6);
       crowd = noiseLoop('bandpass', 750, 0.9);
-      saw = noiseLoop('bandpass', 2600, 4);
+      saw = noiseLoop('bandpass', 900, 0.8);   // v6.5: dor rubbing on dor - a soft low rasp (was a narrow 2-3.6 kHz hiss that players found piercing)
       if (pref.music) setMusic(true);
     } catch (e) { ctx = null; }
   }
@@ -134,8 +134,10 @@
     // crowd: a low murmur that swells now and then by itself
     crowdT -= dt; if (crowdT <= 0) { crowdT = 2 + Math.random() * 4; if (run) ramp(crowd.g.gain, 0.02 + Math.random() * 0.03, 1.2); }
     if (!run) ramp(crowd.g.gain, 0, 0.3);
-    ramp(saw.g.gain, run ? Math.min(0.2, (o.sawing || 0) * 0.2) : 0, 0.05);
-    ramp(saw.f.frequency, 2000 + (o.sawing || 0) * 1600, 0.05);
+    // the rasp breathes with each stroke instead of a steady hiss, and stays well under the kite and the wind
+    const sw = o.sawing || 0, rasp = 0.75 + 0.25 * Math.sin((ctx.currentTime || 0) * 2 * Math.PI * 7);
+    ramp(saw.g.gain, run ? Math.min(0.055, sw * 0.055) * rasp : 0, 0.06);
+    ramp(saw.f.frequency, 700 + sw * 450, 0.12);
     // each local flier hears ONLY their own kite: o.kites = [{ air, dist, tension, turn, pan, haul, free }]
     const list = run && pref.kite ? (o.kites || (o.kite ? [o.kite] : [])) : [];
     for (let i = 0; i < Math.max(voices.length, list.length); i++) {
@@ -186,7 +188,18 @@
   function lost() { tone(300, 0.5, 'sawtooth', 0.05, 110); }
   function hooked() { tone(660, 0.12, 'triangle', 0.07); tone(990, 0.12, 'triangle', 0.06, null, 0.1); }
   function collected() { tone(784, 0.14, 'triangle', 0.08); tone(988, 0.14, 'triangle', 0.08, null, 0.12); tone(1319, 0.3, 'triangle', 0.08, null, 0.24); cheer(false); }
-  function pecha() { tone(520, 0.08, 'square', 0.03); }
+  /** two lines hook: a soft papery "khrr" of manjha catching on manjha, and the faint thump of the line going taut
+   *  (v6.5 - it was a square-wave beep) */
+  function pecha() {
+    if (!ok()) return; const t = ctx.currentTime + 0.01;
+    for (const [d, f, v] of [[0, 1100, 0.05], [0.07, 800, 0.035]]) {
+      const src = ctx.createBufferSource(); src.buffer = noiseBuf; const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = 0.9;
+      const g = ctx.createGain(); g.gain.setValueAtTime(0.0001, t + d); g.gain.exponentialRampToValueAtTime(v, t + d + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.16);
+      src.connect(bp); bp.connect(g); g.connect(sfx); src.start(t + d, Math.random()); src.stop(t + d + 0.2);
+    }
+    const o = ctx.createOscillator(), g = ctx.createGain(); o.type = 'sine'; o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(95, t + 0.12);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.06, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18); o.connect(g); g.connect(sfx); o.start(t); o.stop(t + 0.2);
+  }
   function tug() { click(1.2); tone(180, 0.06, 'triangle', 0.04, 120); }   // a tunka: the line snapping taut
   function ui() { tone(880, 0.05, 'triangle', 0.04); }
   function horn() { tone(220, 0.9, 'sawtooth', 0.06); tone(330, 0.9, 'sawtooth', 0.04); cheer(true); }

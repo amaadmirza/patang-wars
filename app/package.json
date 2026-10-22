@@ -1,7 +1,7 @@
 {
   "name": "patang-wars-app",
   "private": true,
-  "version": "1.6.4",
+  "version": "1.6.5",
   "description": "Patang Wars for Android and iPhone (Capacitor). The whole game runs inside the app, offline.",
   "scripts": {
     "www": "node ../build.js --app",

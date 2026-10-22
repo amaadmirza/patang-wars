@@ -1,9 +1,9 @@
 # Builds the Patang Wars phone apps on GitHub's own machines - no Android Studio or Mac needed on your side.
 #   Android: an APK (install it straight on a phone) and an AAB (for the Google Play Store)
-#   iPhone:  an IPA (unsigned - see app/README-APP.md for how to install it or sign it for TestFlight / App Store)
-# Run it: GitHub -> your repository -> Actions -> "Build Android & iPhone apps" -> Run workflow.
+#   (iPhone builds are switched off for now - Android only. app/README-APP.md says how to turn them back on.)
+# Run it: GitHub -> your repository -> Actions -> "Build Android app" -> Run workflow.
 # When it finishes, download the files under "Artifacts" at the bottom of the run.
-name: Build Android & iPhone apps
+name: Build Android app
 
 on:
   workflow_dispatch:
@@ -19,7 +19,7 @@ permissions:
   contents: write   # to publish the finished apps as a GitHub Release
 
 env:
-  APP_BUILD: ${{ github.run_number }}   # goes up by one every run: Android/iPhone need a higher number for every update
+  APP_BUILD: ${{ github.run_number }}   # goes up by one every run: Android needs a higher number for every update
 
 jobs:
   android:
@@ -99,50 +99,9 @@ jobs:
         if: steps.key.outputs.new == '1'
         with: { name: android-signing-key, path: signing/, retention-days: 7 }
 
-  ios:
-    name: iPhone (IPA)
-    runs-on: macos-latest
-    timeout-minutes: 50
-    steps:
-      - uses: actions/checkout@v5
-      - uses: maxim-lobanov/setup-xcode@v1
-        with: { xcode-version: latest-stable }
-      - uses: actions/setup-node@v5
-        with: { node-version: 22 }
-      - name: Game files (offline app build)
-        run: |
-          npm install --no-audit --no-fund
-          cd app && npm install --no-audit --no-fund && npm run www
-      - name: iPhone project
-        working-directory: app
-        run: |
-          npx cap add ios
-          npx capacitor-assets generate --ios --iconBackgroundColor '#1e2350' --iconBackgroundColorDark '#1e2350' --splashBackgroundColor '#1e2350' --splashBackgroundColorDark '#1e2350'
-          node scripts/patch-native.js ios
-          npx cap sync ios
-      - name: Build (unsigned)
-        working-directory: app/ios/App
-        run: |
-          if [ -d App.xcworkspace ]; then SRC="-workspace App.xcworkspace"; else SRC="-project App.xcodeproj"; fi
-          set -o pipefail
-          xcodebuild $SRC -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
-            -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build 2>&1 | tee /tmp/xc.log | grep -E "error:|warning: .*deprecated|BUILD" | tail -40 \
-            || true
-          grep -q "BUILD SUCCEEDED" /tmp/xc.log || { grep -E "error:" /tmp/xc.log | head -30 | sed 's/^/::error::/'; tail -15 /tmp/xc.log | sed 's/^/::error::/'; exit 1; }
-      - name: Package IPA
-        run: |
-          V=$(node -p "require('./app/package.json').version")
-          mkdir -p out Payload
-          cp -R app/ios/App/build/Build/Products/Release-iphoneos/App.app Payload/
-          zip -qry "out/PatangWars-$V-build$APP_BUILD-unsigned.ipa" Payload
-          ls -la out
-      - uses: actions/upload-artifact@v4
-        with: { name: iphone-app, path: out/, if-no-files-found: error }
-
   publish:
     name: Publish (GitHub Release)
-    needs: [android, ios]
-    if: always() && (needs.android.result == 'success' || needs.ios.result == 'success')
+    needs: [android]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -154,5 +113,5 @@ jobs:
           V=$(node -p "require('./app/package.json').version")
           TAG="v$V-build$APP_BUILD"
           ls -la dl
-          printf 'Patang Wars %s (build %s)\n\n- **Android:** download the .apk on the phone and open it (allow "install unknown apps").\n- **Google Play:** upload the .aab.\n- **iPhone:** the .ipa is unsigned - install with Sideloadly/AltStore, or sign it for TestFlight (see app/README-APP.md).\n' "$V" "$APP_BUILD" > notes.md
+          printf 'Patang Wars %s (build %s)\n\n- **Android:** download the .apk on the phone and open it (allow "install unknown apps").\n- **Google Play:** upload the .aab.\n' "$V" "$APP_BUILD" > notes.md
           gh release create "$TAG" dl/* --title "Patang Wars $V (build $APP_BUILD)" --notes-file notes.md --latest

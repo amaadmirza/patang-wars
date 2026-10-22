@@ -1,4 +1,4 @@
-# Patang Wars — Android aur iPhone app
+# Patang Wars — Android app
 
 Ye app **offline** hai: poori game phone ke andar. Festival, Duel, Two players, Mohalla, tutorial, shop, coins, daily
 login, crates — sab chalte hain, sab kuch phone par save hota hai. **Online** aur **leaderboard** "coming soon" dikhate
@@ -11,7 +11,7 @@ Phone par: hamesha landscape (letay hue), poori screen (upar/neeche ki bars chhu
 
 ## 1. APK aur IPA banana — GitHub par (aap ko Android Studio ya Mac ki zaroorat nahi)
 
-GitHub ki apni machines app banati hain: Linux par Android, Mac par iPhone. **Public** repository par ye bilkul muft hai.
+GitHub ki apni machines app banati hain (Linux par Android). iPhone build abhi band hai — neeche section 3. **Public** repository par ye bilkul muft hai.
 (Private par har mahine 2,000 muft minute — kuch builds ke liye kaafi. Aap ki signing key dono soorton mein chhupi rehti hai.)
 
 1. **github.com** par muft account banayein.
@@ -20,10 +20,9 @@ GitHub ki apni machines app banati hain: Linux par Android, Mac par iPhone. **Pu
 3. Zip ko nikaalein. GitHub Desktop → **File → Add local repository** → `patang-wars` folder chunein → "create a
    repository" par click → **Create repository** → **Publish repository** (chahein to "Keep this code private" hata dein: muft builds).
 4. github.com par apni repository kholein → **Actions** tab → agar poochhe to "I understand my workflows, go ahead and enable them".
-5. Baayen **Build Android & iPhone apps** → **Run workflow** → **Run workflow**.
+5. Baayen **Build Android app** → **Run workflow** → **Run workflow**.
 6. 10–20 minute. Khatam hone par run kholein, neeche **Artifacts**:
    - `android-app` → **PatangWars-…apk** (phone par seedha install) aur **…aab** (Google Play Store ke liye)
-   - `iphone-app` → **PatangWars-…-unsigned.ipa**
    - `android-signing-key` → sirf **pehli** dafa (neeche dekhein — zaroori!)
 
 ### Pehli build ke baad: signing key save karein (ek dafa, 2 minute)
@@ -42,7 +41,9 @@ APK WhatsApp/USB se phone par bhejein → kholein → "Install unknown apps" ki 
 hain, jaise Files ya WhatsApp) → **Install**. Naya version purane ke upar install hota hai, coins aur patangein qaim rehti hain
 (sirf tab jab dono builds ek hi signing key se hon — upar wala qadam).
 
-## 3. iPhone par IPA
+## 3. iPhone (abhi band)
+Workflow ab sirf Android banata hai. iPhone wapas chahiye ho to git history mein v1.6.4 wala `build-apps.yml` ka `ios:` job
+wapas daal dein (ya mujh se kahein). Jab chalu ho:
 Apple **unsigned** IPA ko seedha install nahi karne deta. Teen raaste:
 - **Muft, apne iPhone par test:** computer (Windows/Mac) par **Sideloadly** ya **AltStore** → apni Apple ID se IPA sign
   ho kar iPhone par jaati hai. Muft Apple ID wali app **7 din** chalti hai, phir dobara sign karni padti hai.

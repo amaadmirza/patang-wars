@@ -1,3 +1,22 @@
+# Patang Wars v6.5 — SQA report
+
+| Check | Result |
+|---|---|
+| Unit + server tests (`npm test`: run-tests, multiplayer, persistence, multipecha) | 57 + 32 + 21 + 11 passed, 0 failed |
+| Game flows in the browser (flows.js) | 48 passed |
+| Purchases kept after restart (client-persist.js) | 15 passed |
+| Online, two browsers (online.js) | 6 passed |
+| Offline Android app build in a phone browser with the native bridge mocked (apptest.js, 3 sizes) | 81 passed (incl. the new Mode picker) |
+| Mobile zoom (touch phone 844x390) | +/- pill visible in a match; + + − → zoom 1.00 → 1.39 → 1.18; pinch out → 2.2 (max); remembered after restart |
+| 3-line tangles, 4-minute Festival, 10 kites, autopilot "You" | Normal: your kite in a 3-line pecha **0 s** (was 6.4–12.1 s); Hard: **0 s** (was 1.1–2.4 s); never more than 2 pechas on one line; no page errors with music and sound on |
+| Pecha balance after the 1.5 s re-hook pause (pecha-sim2, Normal, 12 fights each) | tactical 44 %, still 43 %, khainch 38 % of decided fights — fair, same as v6.4 |
+| Screen-size sweep, 11 sizes 360x740 … 1920x1080 (every screen, picker opens and fits, every mode starts) | 0 issues |
+| Menus: phone 844x390 and desktop 1366x768, Dark and Light | hub, picker (Mode / Bots), Kites, Shop, Mohalla, Settings, Trophies, Collection reviewed from screenshots |
+
+Changes: pecha sound (soft low rasp + a small thud instead of a square-wave beep and a 2.6 kHz hiss), pecha lines
+~40 % thinner, bots never start a second pecha on a person's line, 1.5 s re-hook pause, mobile zoom, new icons / picker /
+panel skin, Android-only workflow, version 1.6.5.
+
 # Phone app (offline) — SQA
 
 | Check | Result |
