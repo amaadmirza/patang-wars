@@ -1,0 +1,123 @@
+# Builds the Patang Wars phone apps on GitHub's own machines - no Android Studio or Mac needed on your side.
+#   Android: an APK (install it straight on a phone) and an AAB (for the Google Play Store)
+#   iPhone:  an IPA (unsigned - see app/README-APP.md for how to install it or sign it for TestFlight / App Store)
+# Run it: GitHub -> your repository -> Actions -> "Build Android & iPhone apps" -> Run workflow.
+# When it finishes, download the files under "Artifacts" at the bottom of the run.
+name: Build Android & iPhone apps
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths: ['client/**', 'app/**', 'build.js', '.github/workflows/build-apps.yml']
+
+concurrency:
+  group: apps-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  APP_BUILD: ${{ github.run_number }}   # goes up by one every run: Android/iPhone need a higher number for every update
+
+jobs:
+  android:
+    name: Android (APK + AAB)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 21 }
+      - uses: android-actions/setup-android@v3
+      - name: Game files (offline app build)
+        run: |
+          npm install --no-audit --no-fund
+          cd app && npm install --no-audit --no-fund && npm run www
+      - name: Android project
+        working-directory: app
+        run: |
+          npx cap add android
+          npx capacitor-assets generate --android --iconBackgroundColor '#1e2350' --iconBackgroundColorDark '#1e2350' --splashBackgroundColor '#1e2350' --splashBackgroundColorDark '#1e2350'
+          node scripts/patch-native.js android
+          npx cap sync android
+      - name: Signing key
+        id: key
+        run: |
+          mkdir -p signing
+          if [ -n "$KS_B64" ] && [ -n "$KS_PASS" ]; then
+            echo "$KS_B64" | base64 -d > signing/release.jks
+            echo "pass=$KS_PASS" >> "$GITHUB_OUTPUT"; echo "new=0" >> "$GITHUB_OUTPUT"
+            echo "Using your saved signing key."
+          else
+            PASS=$(openssl rand -hex 16)
+            keytool -genkeypair -v -keystore signing/release.jks -alias patangwars -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$PASS" -keypass "$PASS" -dname "CN=Patang Wars, O=Patang Wars, C=PK"
+            echo "::add-mask::$PASS"
+            echo "pass=$PASS" >> "$GITHUB_OUTPUT"; echo "new=1" >> "$GITHUB_OUTPUT"
+            base64 -w0 signing/release.jks > signing/ANDROID_KEYSTORE_BASE64.txt
+            printf '%s' "$PASS" > signing/ANDROID_KEYSTORE_PASSWORD.txt
+            printf 'This run made a NEW signing key. Keep these two files private and add them as repository secrets\n(Settings -> Secrets and variables -> Actions -> New repository secret), named exactly like the files:\n  ANDROID_KEYSTORE_BASE64\n  ANDROID_KEYSTORE_PASSWORD\nThen every later build is signed with the same key, so phones can update the app (and Google Play accepts updates).\n' > signing/README.txt
+            echo "::warning::No saved signing key: made a new one. Download the 'android-signing-key' artifact and add it as secrets (see its README) before you share builds."
+          fi
+      - name: Build APK and AAB
+        working-directory: app/android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease bundleRelease \
+            -Pandroid.injected.signing.store.file="$GITHUB_WORKSPACE/signing/release.jks" \
+            -Pandroid.injected.signing.store.password="${{ steps.key.outputs.pass }}" \
+            -Pandroid.injected.signing.key.alias=patangwars \
+            -Pandroid.injected.signing.key.password="${{ steps.key.outputs.pass }}"
+      - name: Collect
+        run: |
+          V=$(node -p "require('./app/package.json').version")
+          mkdir -p out
+          cp app/android/app/build/outputs/apk/release/app-release.apk "out/PatangWars-$V-build$APP_BUILD.apk"
+          cp app/android/app/build/outputs/bundle/release/app-release.aab "out/PatangWars-$V-build$APP_BUILD.aab"
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with: { name: android-app, path: out/, if-no-files-found: error }
+      - uses: actions/upload-artifact@v4
+        if: steps.key.outputs.new == '1'
+        with: { name: android-signing-key, path: signing/, retention-days: 7 }
+
+  ios:
+    name: iPhone (IPA)
+    runs-on: macos-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with: { xcode-version: latest-stable }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Game files (offline app build)
+        run: |
+          npm install --no-audit --no-fund
+          cd app && npm install --no-audit --no-fund && npm run www
+      - name: iPhone project
+        working-directory: app
+        run: |
+          npx cap add ios
+          npx capacitor-assets generate --ios --iconBackgroundColor '#1e2350' --iconBackgroundColorDark '#1e2350' --splashBackgroundColor '#1e2350' --splashBackgroundColorDark '#1e2350'
+          node scripts/patch-native.js ios
+          npx cap sync ios
+      - name: Build (unsigned)
+        working-directory: app/ios/App
+        run: |
+          if [ -d App.xcworkspace ]; then SRC="-workspace App.xcworkspace"; else SRC="-project App.xcodeproj"; fi
+          xcodebuild $SRC -scheme App -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+      - name: Package IPA
+        run: |
+          V=$(node -p "require('./app/package.json').version")
+          mkdir -p out Payload
+          cp -R app/ios/App/build/Build/Products/Release-iphoneos/App.app Payload/
+          zip -qry "out/PatangWars-$V-build$APP_BUILD-unsigned.ipa" Payload
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with: { name: iphone-app, path: out/, if-no-files-found: error }

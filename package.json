@@ -1,0 +1,20 @@
+{
+  "name": "kite-fight",
+  "version": "1.6.4",
+  "private": true,
+  "description": "Patang Wars - Basant rooftop kite fighting. Node server: serves the built game and keeps players' records.",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node build.js",
+    "start": "node server/server.js",
+    "dev": "node server/server.js --dev",
+    "test": "node test/run-tests.js && node test/multiplayer.test.js && node test/persistence.test.js && node test/multipecha.test.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "esbuild": "^0.24.0"
+  }
+}

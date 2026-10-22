@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0e1424">
+<title>Patang Wars · Basant Kite Fighting</title>
+<meta name="description" content="Patang Wars - Basant rooftop kite fighting. Cut, loot, rule the sky.">
+<link rel="icon" type="image/svg+xml" href="assets/brand/icon.svg">
+<link rel="apple-touch-icon" href="assets/brand/icon.svg">
+<link rel="stylesheet" href="css/index.css">
+<script src="src/boot.js"></script>
+</head><body>
+
+<canvas id="view"></canvas>
+
+<!-- phones: the game is played sideways only. In portrait this covers everything until the phone is turned. -->
+<div id="rotate" aria-live="polite">
+  <div class="rot-phone" aria-hidden="true"><i></i></div>
+  <b>Rotate your phone</b>
+  <small>Patang Wars plays in landscape only &mdash; turn your phone sideways to continue.</small>
+  <button class="ghost sm" id="rotHome">Back to home</button>
+</div>
+
+<!-- ===== splash (first thing on load: loads the kites, and the tap that starts the music) ===== -->
+<div id="splash" class="screen splash">
+  <div class="splash-sky" id="splashSky" aria-hidden="true"></div>
+  <div class="splash-inner">
+    <h1 class="logo-h"><img class="logo-full" src="assets/brand/logo.svg" alt="Patang Wars - Cut, loot, rule the sky"></h1>
+    <p class="sub slogan">Basant ka asli muqabla &mdash; pecha lagao, <b>Bo Kata!</b></p>
+    <div class="load"><i id="splashBar"></i></div>
+    <p class="load-txt" id="splashTxt">Tying the kanni&hellip;</p>
+    <button class="cta big-cta" id="splashGo" disabled>Tap to play</button>
+  </div>
+</div>
+
+<!-- ===== home hub (v6.3): rail on the left, rank and coins on top, the stage and Play in the middle, events on the right ===== -->
+<div id="menu" class="screen hub hidden">
+  <div class="menu-sky" id="menuSky" aria-hidden="true"></div>
+  <header class="hub-top">
+    <button class="hub-rank" id="rankCard" title="Your rank"></button>
+    <img class="hub-logo" src="assets/brand/logo.svg" alt="Patang Wars">
+    <button class="hub-coins" id="walletBtn" title="Your coins - open the shop"><i class="coin" aria-hidden="true"></i><b id="coinCount">0</b><span class="hub-plus" aria-hidden="true">+</span></button>
+  </header>
+  <nav class="hub-rail" aria-label="Main">
+    <button class="rail-b on" id="railHome"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></svg><span>Home</span></button>
+    <button class="rail-b rail-online" id="onlineBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.5 3.9 5.5 3.9 9s-1.3 6.5-3.9 9c-2.6-2.5-3.9-5.5-3.9-9S9.4 5.5 12 3Z"/></svg><span>Online</span><em class="rail-live" aria-hidden="true"></em></button>
+    <button class="rail-b" id="railKites"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 19 10l-7 11.5L5 10Z"/><path d="M12 2.5v19M5 10h14"/></svg><span>Kites</span></button>
+    <button class="rail-b" id="mohallaBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20V10l4-3 4 3v10M13 20V8l4-3 4 3v12M2 20.5h20"/><path d="M6 13h2M6 16h2M16 11h2M16 14h2"/></svg><span>Mohalla</span></button>
+    <button class="rail-b" id="shopBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h16l-1.2 10.2a1.5 1.5 0 0 1-1.5 1.3H6.7a1.5 1.5 0 0 1-1.5-1.3Z"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2"/></svg><span>Shop</span></button>
+  </nav>
+  <main class="hub-stage">
+    <div class="stage-sel"><button class="stage-arrow" id="stagePrev" aria-label="Previous rooftop">&lsaquo;</button><h2 id="stageName"></h2><button class="stage-arrow" id="stageNext" aria-label="Next rooftop">&rsaquo;</button></div>
+    <div class="stage-art" id="stageArt" aria-hidden="true"></div>
+    <button class="stage-daily" id="dailyCard" title="Today's challenge"></button>
+    <div class="stage-act">
+      <button class="side-b" id="hubDiff" title="How good the bots are"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21c-4 0-6.5-2.6-6.5-6 0-3.6 3-5.5 3.6-9.5 2.7 1.6 4 4 4.2 6.3.9-.7 1.5-1.8 1.7-3.1 2 1.7 3.5 4 3.5 6.5 0 3.3-2.5 5.8-6.5 5.8Z"/></svg><b></b><small>Bots</small></button>
+      <button class="play-b" id="hubPlay">Play</button>
+      <button class="side-b" id="hubMode" title="How you fly"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21 15 4M21 21 9 4"/><circle cx="12" cy="8.3" r="1.6"/></svg><b></b><small>Mode</small></button>
+    </div>
+  </main>
+  <aside class="hub-events" aria-label="Events">
+    <button class="ev-b" id="loginBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/></svg><span>Daily</span><em class="ev-badge"></em></button>
+    <button class="ev-b" id="giftBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="9" width="17" height="11" rx="1.5"/><path d="M2.5 9h19v-.5M12 9v11M12 9c-2-4-6-4-6-1.5S9 9 12 9Zm0 0c2-4 6-4 6-1.5S15 9 12 9Z"/></svg><span>Free gift</span><em class="ev-badge"></em></button>
+    <button class="ev-b" id="trophyBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0Z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8.5 20h7"/></svg><span>Trophies</span><em class="ev-badge"></em></button>
+    <button class="ev-b" id="lbBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V12M12 20V5M19 20v-6"/><path d="M3 20.5h18"/></svg><span>Leaders</span><em class="ev-badge"></em></button>
+    <button class="ev-b" id="collBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1"/><rect x="13.5" y="3.5" width="7" height="7" rx="1"/><rect x="3.5" y="13.5" width="7" height="7" rx="1"/><rect x="13.5" y="13.5" width="7" height="7" rx="1"/></svg><span>Collection</span><em class="ev-badge"></em></button>
+    <button class="ev-b" id="tutBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5 12 3l8 3.5-8 3.5Z"/><path d="M7 8v5c0 1.7 2.2 3 5 3s5-1.3 5-3V8"/></svg><span>Tutorial</span><em class="ev-badge"></em></button>
+    <button class="ev-b" id="howBtn"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 1 1 3.3 2.4c-.6.2-.9.7-.9 1.3v.7M12 16.8v.2"/></svg><span>How to</span><em class="ev-badge"></em></button>
+  </aside>
+  <button class="hub-gear" id="setBtnMenu" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M2.5 12h3M18.5 12h3M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/></svg></button>
+</div>
+
+<!-- ===== daily login & free gift ===== -->
+<div id="loginPop" class="screen hidden" role="dialog" aria-labelledby="loginTitle">
+  <div class="panel login-panel">
+    <div class="login-tabs" role="tablist"><button data-lt="login" class="on" id="loginTitle">Daily login<em class="ev-badge"></em></button><button data-lt="gift">Free gift<em class="ev-badge"></em></button><button class="x" id="loginClose" aria-label="Close">&times;</button></div>
+    <div id="loginBody"></div>
+  </div>
+</div>
+<!-- ===== "You received" ===== -->
+<div id="rewardPop" class="screen hidden" role="dialog" aria-live="polite">
+  <div class="reward-in"><h2 class="reward-h">You received</h2><div class="reward-burst" aria-hidden="true"></div><div id="rewardItem" class="reward-item"></div><p class="reward-tap">Tap to continue</p></div>
+</div>
+
+<!-- ===== online: your name, then the lobby (filled by the online part of src/game.js) ===== -->
+<div id="nameScreen" class="screen hidden">
+  <div class="panel name-panel">
+    <span class="eyebrow">Online</span>
+    <h2>Your name on the rooftops</h2>
+    <p class="muted">Your friends will see this name above your roof and in the scores.</p>
+    <input id="nameInput" maxlength="16" autocomplete="nickname" spellcheck="false" placeholder="e.g. Asif">
+    <p id="nameErr" class="err"></p>
+    <div class="panel-ft"><button class="ghost" id="nameSkip">Play offline</button><button class="cta" id="nameGo">Continue &rarr;</button></div>
+  </div>
+</div>
+<div id="online" class="screen hidden">
+  <div class="panel xwide online-panel">
+    <div class="panel-hd"><h2>Online</h2><div class="on-me">Playing as <b id="onName"></b> <button class="link sm" id="onRename">change name</button></div><button class="x" id="onClose" aria-label="Close">&times;</button></div>
+    <p id="onStatus" class="on-status"></p>
+    <div id="onBody"></div>
+  </div>
+</div>
+
+<div id="how" class="screen hidden">
+  <div class="panel wide">
+    <div class="panel-hd"><h2>How to play</h2><button class="x" id="howOk" aria-label="Close">&times;</button></div>
+    <div class="how-grid">
+      <table class="keys">
+        <tr><th>Action</th><th>Solo</th><th>P1</th><th>P2</th><th>Touch</th></tr>
+        <tr><td><b>Fly</b> &mdash; hold to fly along the nose</td><td><kbd>&uarr;</kbd></td><td><kbd>W</kbd></td><td><kbd>I</kbd></td><td>FLY</td></tr>
+        <tr><td><b>Tunka</b> &mdash; a quick tap of Fly</td><td><kbd>&uarr;</kbd></td><td><kbd>W</kbd></td><td><kbd>I</kbd></td><td>tap FLY</td></tr>
+        <tr><td><b>Steer</b> the nose</td><td><kbd>&larr;</kbd><kbd>&rarr;</kbd></td><td><kbd>A</kbd><kbd>D</kbd></td><td><kbd>J</kbd><kbd>L</kbd></td><td>&#9664; &#9654;</td></tr>
+        <tr><td><b>Khainch</b> &mdash; pull the line in (hold)</td><td><kbd>A</kbd> / <kbd>&darr;</kbd></td><td><kbd>S</kbd></td><td><kbd>K</kbd></td><td>KHAINCH</td></tr>
+        <tr><td><b>Dheel</b> &mdash; let line out (hold)</td><td><kbd>D</kbd></td><td><kbd>Q</kbd></td><td><kbd>O</kbd></td><td>DHEEL</td></tr>
+        <tr><td><b>Land &amp; change kite</b></td><td><kbd>R</kbd></td><td><kbd>R</kbd></td><td><kbd>H</kbd></td><td>Land</td></tr>
+        <tr><td>Zoom</td><td colspan="3">Mouse wheel &middot; <kbd>[</kbd> <kbd>]</kbd></td><td>&minus; +</td></tr>
+      </table>
+      <div class="how-text">
+        <h3>The pecha</h3>
+        <p>Fly your line across a rival's line and the two hook &mdash; from above or below. Hooked lines saw each other until one is cut. <b>What cuts is line moving through the crossing:</b> a fast <b>khainch</b> or a long <b>dheel</b> drags your glass-coated line across one spot of theirs. <b>A still line loses.</b> Back out the way you came to escape. A kite that only rests its body on another line slides off it, and a pecha nobody works ends within a few seconds &mdash; the line that has taken the most wear parts. <b>Upar ya neeche:</b> from <b>on top</b>, dheel cuts best; from <b>below</b>, khainch cuts best &mdash; your card (top-left) tells you which you are. A quick <b>tunka</b> in a pecha is a <b>jhatka</b>: one sharp jerk that saws hard for a moment. <b>A third kite can join</b> a pecha that is already on &mdash; two lines on one (in a Mohalla, a team-mate coming to help) &mdash; but never more than three lines in one tangle. The ring at each crossing is <b>green</b> while you are cutting and <b>red</b> while you are being cut. <b>The cut goes to whoever did the most of the cutting.</b></p>
+        <h3>Flying</h3>
+        <p>Point the nose with steer &mdash; a quick tap nudges it, holding turns it fast; it stays where you leave it &mdash; then hold Fly and the kite goes that way. Flying up when the kite is right overhead lets a little line slip so it climbs out again, and near the roofs a dive turns into a skim. Kite on the roof? Press Fly to launch it again. It runs out of power near the edges of the sky and overhead, like a real kite; let go of everything and it settles back into a hover. A quick tap is a <b>tunka</b> &mdash; the kite dips, swings and darts. On slack line a light patang spins by itself; tunka when the nose points where you want.</p>
+        <h3>Loot &amp; scoring</h3>
+        <p>Cut kites fall trailing string &mdash; and in a Festival, kites cut on other rooftops keep drifting over yours. <b>Lapetna:</b> sweep your line through a falling kite or its dor and it wraps round your line; the kite then <b>flies on your line</b>. Khainch to bring it down to your hands before the street kids get it &mdash; they snag it with their jhaar sticks, or catch hold of the dor it trails and <b>haul it down hand over hand</b> (watch the <b>Loot chase</b> window). Sweep your line through it while they're pulling and you can still snatch it away. Cut +3 · kite home +2 · lose a kite &minus;1 · cuts in a row earn bonus points.</p>
+        <h3>Mohalla (team matches)</h3>
+        <p>Your street against theirs, 2 vs 2 or 3 vs 3. Team-mates' strings never cut each other; the side with more cuts wins. Climb the <b>career</b> - six neighbourhoods, each one unlocked by beating the one before - or play a quick team match. Online rooms can be played in teams too.</p>
+        <h3>Coins, shop &amp; collection</h3>
+        <p>Every match pays coins: <b>10 per cut</b>, 8 per kite brought home, 40 for a win, plus the <b>daily challenge</b> and career rewards. Spend them in the <b>Shop</b> on kites, strings, reels and fliers - what you buy is yours for good. Every kite you bring home goes into your <b>Collection</b>, and the weekly <b>Leaderboard</b> shows the best cutters, streaks and looters.</p>
+        <h3>Quick chat &amp; replays</h3>
+        <p>Press <kbd>T</kbd> (or the chat button) for quick phrases, or <kbd>1</kbd>-<kbd>8</kbd> to send one straight away. In a team, "Help me!" brings a team-mate. After a cut you were part of, a short <b>slow-motion replay</b> plays - skip it, or switch replays off in Settings.</p>
+        <h3>Rank</h3>
+        <p>Every cut, every kite you bring home and every win earns XP. Climb from <b>Naya</b> to <b>Khalifa</b> &mdash; your rank is shown on the main menu.</p>
+        <h3>Match</h3>
+        <p>Play to a clock, with no limit, or as a race: <b>First to 5</b> or <b>First to 10 cuts</b> wins.</p>
+        <h3>Wind &amp; trophies</h3>
+        <p>The <b>hawa</b> shifts during a match &mdash; watch the gauge under the timer. Your cuts, wins and streaks unlock <b>Trophies</b> on the main menu.</p>
+        <p class="muted"><kbd>P</kbd> pause · <kbd>M</kbd> sound · <kbd>B</kbd> next music track · <kbd>T</kbd> quick chat · <kbd>+</kbd>/<kbd>&minus;</kbd> bots · <kbd>G</kbd> debug · <kbd>Esc</kbd> menu / skip replay</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== settings: every option in one place (menu -> Settings, or the gear in a match) ===== -->
+<div id="settings" class="screen hidden" role="dialog" aria-labelledby="setTitle">
+  <div class="panel xwide set-panel">
+    <div class="panel-hd"><h2 id="setTitle">Settings</h2><button class="x" id="setClose" aria-label="Close settings (Esc)">&times;</button></div>
+    <div class="set-body">
+      <nav class="set-nav" id="setNav" role="tablist">
+        <button data-sp="quick" class="on" role="tab">General</button>
+        <button data-sp="sound" role="tab">Sound</button>
+        <button data-sp="music" role="tab">Music</button>
+        <button data-sp="play" role="tab">Gameplay</button>
+        <button data-sp="ctl" role="tab">Controls</button>
+        <button data-sp="display" role="tab">Display</button>
+        <button data-sp="profile" role="tab">Profile</button>
+      </nav>
+      <div class="set-panes">
+        <section class="set-pane" data-pane="quick">
+          <div class="tog-grid" id="quickToggles"></div>
+        </section>
+        <section class="set-pane hidden" data-pane="sound">
+          <div class="set-row"><div><b>Sound effects</b><small>Every game sound. Shortcut: <kbd>M</kbd></small></div><div class="seg" id="sfxPick"><button data-sfx="on">On</button><button data-sfx="off">Off</button></div></div>
+          <div class="set-row"><div><b>Kite sound</b><small>The paper patang's &ldquo;phar-phar&rdquo; in the wind</small></div><div class="seg" id="kOnOff"><button data-k="on">On</button><button data-k="off">Off</button></div></div>
+          <div class="set-row"><div><b>Shouts</b><small id="vInfo">Bo kaata! in Urdu or Hindi</small></div><div class="set-ctl"><div class="seg" id="vPick"><button data-v="ur">Urdu</button><button data-v="hi">Hindi</button><button data-v="off">Off</button></div><button class="ghost sm" id="vTest">&#9654; Test</button></div></div>
+          <div class="set-row"><div><b>Roof music</b><small>The DJ and dhol on the neighbours' roofs</small></div><div class="seg" id="rOnOff"><button data-r="on">On</button><button data-r="off">Off</button></div></div>
+        </section>
+        <section class="set-pane hidden" data-pane="music">
+          <div class="set-row"><div><b>Music</b><small>Shortcut: <kbd>B</kbd> next track</small></div><div class="set-ctl"><div class="seg" id="mOnOff"><button data-m="on">On</button><button data-m="off">Off</button></div></div></div>
+          <div class="set-row"><div><b>Volume</b></div><input type="range" id="mVol" min="0" max="100" step="1" aria-label="Music volume"></div>
+          <div class="track-list" id="trackList"></div>
+          <div class="set-row"><div><b>Your songs</b><small id="songCount"></small></div><label class="ghost sm add-songs">+ Add songs<input type="file" id="songFile" accept="audio/*,.mp3,.m4a,.aac,.ogg,.opus,.wav,.flac" multiple hidden></label></div>
+          <p class="muted small">Add your own Basant songs (mp3, m4a, ogg, wav&hellip;) from this device. They stay in this browser and play as a shuffled playlist when you pick <b>Your songs</b>. Only use music you have the right to play.</p>
+          <ul class="song-list" id="songList"></ul>
+        </section>
+        <section class="set-pane hidden" data-pane="play">
+          <div class="set-row"><div><b>Steering speed</b><small>How fast the nose turns when you steer, and how fast a patang spins on dheel</small></div><div class="seg" id="steerPick"><button data-steer="0.75">Smooth</button><button data-steer="1">Quick</button><button data-steer="1.35">Sharp</button></div></div>
+          <div class="set-row"><div><b>Cut replay</b><small>A short slow-motion replay after a cut you were part of</small></div><div class="seg" id="replayPick"><button data-replay="on">On</button><button data-replay="off">Off</button></div></div>
+          <div class="set-row"><div><b>Tutorial</b><small>Learn fly, steer, tunka, khainch and dheel step by step</small></div><button class="ghost sm" id="setTut">Play tutorial</button></div>
+        </section>
+        <section class="set-pane hidden" data-pane="ctl">
+          <div class="set-row"><div><b>Touch controls</b><small>Buttons on screen, or one-finger swipe: down = fly, further down = khainch, up = dheel, left/right = steer, tap = tunka</small></div><div class="seg" id="ctlPick"><button data-tm="buttons">Buttons</button><button data-tm="swipe">Swipe</button></div></div>
+          <div class="set-row touch-only" id="ctlEditRow"><div><b>Button layout</b><small>Move the buttons, change their size and see-through, left-handed</small></div><button class="ghost sm" id="ctlEdit">Customize</button></div>
+          <div class="set-row"><div><b>Keyboard</b><small>Solo: &uarr; fly/tunka &middot; &larr; &rarr; steer &middot; &darr; khainch &middot; D dheel &middot; R land &middot; P pause</small></div><button class="ghost sm" id="setKeys">All keys</button></div>
+        </section>
+        <section class="set-pane hidden" data-pane="display">
+          <div class="set-row"><div><b>Theme</b><small>Menus and panels</small></div><div class="seg" id="themePick"><button data-theme="dark">Dark</button><button data-theme="light">Light</button><button data-theme="auto">Auto</button></div></div>
+          <div class="set-row"><div><b>Graphics</b><small>Auto adjusts to your device. Battery saver is smoother on older phones.</small></div><div class="seg" id="gfxPick"><button data-gfx="auto">Auto</button><button data-gfx="high">High</button><button data-gfx="saver">Battery saver</button></div></div>
+          <div class="set-row"><div><b>Full screen</b><small>Hide the browser bars</small></div><button class="ghost sm" id="setFull">Full screen</button></div>
+        </section>
+        <section class="set-pane hidden" data-pane="profile">
+          <div class="set-row"><div><b>Your name</b><small>Shown above your roof online</small></div><div class="set-ctl"><span class="set-name" id="setName"></span><button class="ghost sm" id="setRename">Change</button></div></div>
+          <div class="set-row" id="acctRow"><div><b>Backup your account</b><small id="acctInfo">Your coins and kites are saved on the game server.</small></div><div class="set-ctl"><span class="set-name" id="acctPid"></span><button class="ghost sm" id="acctCopy">Copy backup code</button></div></div>
+          <div class="set-row" id="acctRestoreRow"><div><b>Restore an account</b><small>Paste a backup code from another phone or browser to bring its coins and kites here.</small></div><div class="set-ctl"><input id="acctCode" class="set-input" placeholder="PW-..." autocomplete="off" spellcheck="false"><button class="ghost sm" id="acctRestore">Restore</button></div></div>
+          <div class="set-row"><div><b>Reset settings</b><small>Puts every option on this page back to its default. Coins, kites and records are kept.</small></div><button class="ghost sm danger" id="setReset">Reset</button></div>
+          <p class="muted small set-ver">Patang Wars &middot; v6.3</p>
+        </section>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="trophies" class="screen hidden">
+  <div class="panel">
+    <div class="panel-hd"><h2>Trophies &amp; record</h2><button class="x" id="trophyOk" aria-label="Close">&times;</button></div>
+    <div id="trophyStats" class="tstats"></div>
+    <div id="trophyList" class="tlist"></div>
+  </div>
+</div>
+<div id="toasts"></div>
+
+<!-- ===== shop, collection, leaderboard, mohalla (filled by src/game.js) ===== -->
+<div id="shop" class="screen hidden">
+  <div class="panel xwide shop-panel">
+    <div class="panel-hd"><h2>Shop</h2><div class="wallet sm"><i class="coin" aria-hidden="true"></i><b class="coinNow">0</b></div><button class="x" id="shopClose" aria-label="Close">&times;</button></div>
+    <div class="seg shop-tabs" id="shopTabs"><button data-k="crate">Crates</button><button data-k="kite">Kites</button><button data-k="thread">Strings</button><button data-k="spool">Reels</button><button data-k="char">Fliers</button></div>
+    <div class="shop-filter chips" id="shopFilter"></div>
+    <div id="shopGrid" class="grid shop-grid"></div>
+    <p class="muted small shop-note">Coins come from every match: 10 per cut, 8 per kite brought home, 40 for a win, and more from the daily challenge and the Mohalla career. What you buy is yours for good.</p>
+  </div>
+</div>
+<div id="buyPop" class="screen hidden">
+  <div class="panel buy-panel">
+    <div class="buy-body" id="buyBody"></div>
+    <div class="panel-ft"><button class="ghost" id="buyNo">Not now</button><button class="cta" id="buyYes">Buy</button></div>
+  </div>
+</div>
+<div id="coll" class="screen hidden">
+  <div class="panel xwide">
+    <div class="panel-hd"><h2>Loot collection</h2><span class="coll-count" id="collCount"></span><button class="x" id="collClose" aria-label="Close">&times;</button></div>
+    <p class="muted small">Every kite you cut down and bring home on your own line goes into your collection. Kites you have not caught yet are shown as shadows.</p>
+    <div class="chips" id="collTabs"></div>
+    <div id="collGrid" class="grid coll-grid"></div>
+  </div>
+</div>
+<div id="lb" class="screen hidden">
+  <div class="panel">
+    <div class="panel-hd"><h2>This week's best</h2><button class="x" id="lbClose" aria-label="Close">&times;</button></div>
+    <div class="seg lb-tabs" id="lbTabs"><button data-k="cuts">Most cuts</button><button data-k="streak">Longest streak</button><button data-k="loot">Most loot</button></div>
+    <div id="lbBody" class="lb-body"></div>
+  </div>
+</div>
+<div id="mohalla" class="screen hidden">
+  <div class="panel xwide">
+    <div class="panel-hd"><h2>Mohalla</h2><span class="muted small">Your street against theirs. Team-mates' strings never cut each other; the team with more cuts wins.</span><button class="x" id="mhClose" aria-label="Close">&times;</button></div>
+    <div class="mh-grid">
+      <section class="card"><h3>Career <small id="mhProgress"></small></h3><div id="mhLadder" class="mh-ladder"></div></section>
+      <section class="card"><h3>Quick team match</h3>
+        <h4>Teams</h4><div class="row opts two" id="mhSize"></div>
+        <h4>Rival difficulty</h4><div class="row opts three" id="mhDiff"></div>
+        <h4>Match</h4><div class="row opts mini" id="mhLen"></div>
+        <button class="cta big mh-go" id="mhQuick">Choose kite &amp; fly &rarr;</button>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- ===== selection ===== -->
+<div id="select" class="screen hidden">
+  <header class="topbar">
+    <button class="ghost" id="selBack">&larr; Back</button>
+    <h2 id="selTitle"></h2>
+    <div id="tabs" class="seg hidden"><button data-p="1" class="on">Player 1</button><button data-p="2">Player 2</button></div>
+    <button class="cta" id="play">Fly &rarr;</button>
+  </header>
+  <div class="sel-body">
+    <main class="sel-main">
+      <section class="card">
+        <div id="kiteInfo" class="kinfo"></div>
+        <div id="kiteTabs" class="chips scroll-x"></div>
+        <div id="kiteGrid" class="grid"></div>
+      </section>
+    </main>
+    <aside class="sel-side card">
+      <div class="seg sidetabs" id="sideTabs">
+        <button data-st="flier" class="on">Flier</button><button data-st="gear">Dor &amp; Charkhi</button><button data-st="kanni">Kanni</button><button data-st="match">Match</button>
+      </div>
+      <div class="sidepane" data-pane="flier"><p class="hint">Who flies your kite. <b>Make your own</b> at the end.</p><div id="charRow" class="row chars"></div></div>
+      <div class="sidepane hidden" data-pane="gear">
+        <h4>Dor (thread) <small>&mdash; decides cutting power &amp; strength</small></h4><div id="threadRow" class="threads"></div>
+        <h4>Charkhi &amp; Pinna <small>&mdash; looks only, wound with your dor</small></h4><div id="spoolRow" class="row reels"></div>
+      </div>
+      <div class="sidepane hidden" data-pane="kanni">
+        <p class="hint">The kanni is the bridle knot. It changes how the kite sits in the wind.</p>
+        <h4>Knot up / down</h4><div id="kanniRow" class="row opts"></div><h4>Balance</h4><div id="kbalRow" class="row opts"></div>
+      </div>
+      <div class="sidepane hidden" data-pane="match">
+        <div id="layoutWrap" class="hidden"><h4>Screen</h4><div id="layoutRow" class="row opts two"></div></div>
+        <h4>Scene</h4><div id="sceneRow" class="row scenes"></div>
+        <div class="match-grid"><div><h4>Length</h4><div id="timeRow" class="row opts mini"></div></div><div><h4>Bots</h4><div class="stepper"><button id="botsMinus" aria-label="Fewer bots">&minus;</button><span id="botsN">0</span><button id="botsPlus" aria-label="More bots">+</button></div></div></div>
+        <h4>Bot difficulty</h4><div id="diffRow" class="row opts three"></div>
+      </div>
+      <div class="loadout" id="loadout"></div>
+    </aside>
+  </div>
+</div>
+
+<!-- ===== kite maker & flier maker (filled by src/kitemaker.js and src/fliers.js) ===== -->
+<div id="maker" class="screen maker hidden">
+  <div class="panel xwide"><div class="panel-hd"><h2>Kite maker</h2><button class="x" id="mkClose" aria-label="Close">&times;</button></div>
+    <div class="mk-body"></div>
+    <div class="panel-ft"><button class="cta" id="mkSave">Save kite</button></div></div>
+</div>
+<div id="charMaker" class="screen maker hidden">
+  <div class="panel xwide"><div class="panel-hd"><h2>Make your flier</h2><button class="x" id="cmClose" aria-label="Close">&times;</button></div>
+    <div class="mk-body"></div>
+    <div class="panel-ft"><button class="cta" id="cmSave">Save flier</button></div></div>
+</div>
+
+<!-- ===== in game ===== -->
+<div id="game" class="hidden">
+  <div id="topLeft" class="hud-bar">
+    <button id="back" title="Menu (Esc)" aria-label="Menu">&#8962;</button>
+    <button id="pauseBtn" title="Pause (P)" aria-label="Pause">&#10074;&#10074;</button>
+    <span class="sep"></span>
+    <button id="zoomOut" title="Zoom out ([)" aria-label="Zoom out">&minus;</button><button id="zoomIn" title="Zoom in (])" aria-label="Zoom in">+</button>
+    <span class="sep"></span>
+    <button id="landBtn" class="txt" title="Land and change kite (R)">&#8595; Land</button>
+    <button id="musicBtn" title="Music: next track / off (B)" aria-label="Music">&#9835;</button>
+    <button id="setBtn" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button>
+    <button id="chatBtn" title="Quick chat (T, or keys 1-8)" aria-label="Quick chat"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v10H9l-5 4Z"/></svg></button>
+    <span id="modeLabel"></span>
+  </div>
+  <div id="topRight"><div id="botCtl" class="hud-bar">Bots <button id="botMinus" aria-label="Remove bot">&minus;</button><b id="botcount">0</b><button id="botPlus" aria-label="Add bot">+</button></div><div id="feed"></div></div>
+  <div id="score"></div>
+  <div id="timer" class="hidden"></div>
+  <div id="replayUI" class="hidden">
+    <div class="rp-tag"><i></i>REPLAY <span id="rpSlow">SLOW MOTION</span></div>
+    <div class="rp-bar"><i id="rpProg"></i></div>
+    <div class="rp-act"><label class="rp-never"><input type="checkbox" id="rpNever"> Don't show replays</label><button class="cta sm" id="rpSkip">Skip &rsaquo;</button></div>
+  </div>
+  <div id="chatPop" class="hidden" role="menu" aria-label="Quick chat"></div>
+  <div id="tut" class="hidden"><div id="tutText"></div><button id="tutSkip">Skip</button></div>
+  <div id="pause" class="hidden"><b>Paused</b><small>Press P to continue</small><span class="seg touch-only" id="pauseTm"><button data-tm="buttons">Buttons</button><button data-tm="swipe">Swipe</button></span><button class="ghost sm touch-only" id="pauseCtl">Customize buttons</button><button class="ghost sm" id="pauseSet">Settings</button></div>
+  <pre id="debug" class="hidden"></pre>
+  <div id="swap" class="screen hidden">
+    <div class="panel xwide">
+      <div class="panel-hd"><h2>Choose your next kite</h2><button class="x" id="swapCancel" title="Keep flying this one (Esc)" aria-label="Keep this kite">&times;</button></div>
+      <div id="swapInfo" class="kinfo"></div>
+      <div id="swapTabs" class="chips scroll-x"></div>
+      <div id="swapGrid" class="grid"></div>
+    </div>
+  </div>
+  <div id="results" class="screen hidden">
+    <div class="panel">
+      <div class="panel-hd"><h2 id="resTitle">Results</h2></div>
+      <table id="resTable" class="table"></table>
+      <p id="resNote" class="muted"></p>
+      <div id="resXp"></div>
+      <div id="resCoins" class="res-coins"></div>
+      <div class="panel-ft"><button class="ghost" id="resMenu">Menu</button><button class="cta" id="resAgain">Play again</button></div>
+    </div>
+  </div>
+  <div id="touch" class="hidden">
+    <div class="lr"><button data-a="l" aria-label="Steer left">&#9664;</button><button data-a="r" aria-label="Steer right">&#9654;</button></div>
+    <div class="ab"><button data-a="in">KHAINCH</button><button data-a="out">DHEEL</button><button data-a="fly" class="fly">FLY</button></div>
+  </div>
+</div>
+
+<!-- ===== touch controls editor (phones/tablets): drag the buttons, set size and see-through ===== -->
+<div id="ctlEditor" class="hidden" aria-label="Customize touch buttons">
+  <div class="ce-bar">
+    <b>Customize buttons</b>
+    <label class="ce-sl">Size<input type="range" id="ceSize" min="85" max="135" step="5"></label>
+    <label class="ce-sl">See-through<input type="range" id="ceOpacity" min="40" max="100" step="5"></label>
+    <button class="ghost sm" id="ceMirror">Left-handed</button>
+    <button class="ghost sm" id="ceReset">Reset</button>
+    <button class="ghost sm" id="ceCancel">Cancel</button>
+    <button class="cta sm" id="ceSave">Save</button>
+  </div>
+  <p class="ce-hint">Drag a button to move it. Buttons stay in the lower part of the screen so the sky stays clear, and never sit on top of each other.</p>
+  <div id="ceStage"></div>
+</div>
+
+<script src="src/env.js"></script>
+<script src="src/trophies.js"></script>
+<script src="src/economy.js"></script>
+<script src="src/data.js"></script>
+<script src="src/physics.js"></script>
+<script src="src/pecha.js"></script>
+<script src="src/sound.js"></script>
+<script src="src/kitemaker.js"></script>
+<script src="src/fliers.js"></script>
+<script src="src/art.js"></script>
+<script src="src/catalog.js"></script>
+<script src="src/game.js"></script>
+</body></html>

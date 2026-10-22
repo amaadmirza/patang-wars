@@ -1,0 +1,12 @@
+{
+  "appId": "pk.patangwars.game",
+  "appName": "Patang Wars",
+  "webDir": "www",
+  "backgroundColor": "#1e2350",
+  "android": { "backgroundColor": "#1e2350", "allowMixedContent": false, "webContentsDebuggingEnabled": false },
+  "ios": { "backgroundColor": "#1e2350", "contentInset": "never", "scrollEnabled": false },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 1500, "launchAutoHide": true, "backgroundColor": "#1e2350", "showSpinner": false, "androidScaleType": "CENTER_CROP" },
+    "SystemBars": { "insetsHandling": "css" }
+  }
+}

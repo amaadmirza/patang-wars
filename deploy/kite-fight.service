@@ -1,0 +1,31 @@
+# systemd service: keeps the game running and restarts it after a crash or a reboot.
+#   sudo useradd --system --home /opt/kite-fight kitefight
+#   sudo chown -R kitefight /opt/kite-fight
+#   sudo cp deploy/kite-fight.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now kite-fight
+#   journalctl -u kite-fight -f          (live log)
+[Unit]
+Description=Kite Fight game server
+After=network.target
+
+[Service]
+Type=simple
+User=kitefight
+WorkingDirectory=/opt/kite-fight
+Environment=HOST=0.0.0.0
+Environment=PORT=8080
+# player records stay here when you copy a new version over the game files
+Environment=DATA_DIR=/opt/kite-fight/data
+ExecStart=/usr/bin/node server/server.js
+Restart=on-failure
+RestartSec=3
+# hardening: the server only needs to write its own data folder
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/kite-fight/data
+PrivateTmp=true
+MemoryMax=512M
+
+[Install]
+WantedBy=multi-user.target
