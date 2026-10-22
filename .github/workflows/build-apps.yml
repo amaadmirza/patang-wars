@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write   # to publish the finished apps as a GitHub Release (and the 'builds' branch)
+  contents: write   # to publish the finished apps as a GitHub Release
 
 env:
   APP_BUILD: ${{ github.run_number }}   # goes up by one every run: Android/iPhone need a higher number for every update
@@ -140,7 +140,7 @@ jobs:
         with: { name: iphone-app, path: out/, if-no-files-found: error }
 
   publish:
-    name: Publish (Release + builds branch)
+    name: Publish (GitHub Release)
     needs: [android, ios]
     if: always() && (needs.android.result == 'success' || needs.ios.result == 'success')
     runs-on: ubuntu-24.04
@@ -156,9 +156,3 @@ jobs:
           ls -la dl
           printf 'Patang Wars %s (build %s)\n\n- **Android:** download the .apk on the phone and open it (allow "install unknown apps").\n- **Google Play:** upload the .aab.\n- **iPhone:** the .ipa is unsigned - install with Sideloadly/AltStore, or sign it for TestFlight (see app/README-APP.md).\n' "$V" "$APP_BUILD" > notes.md
           gh release create "$TAG" dl/* --title "Patang Wars $V (build $APP_BUILD)" --notes-file notes.md --latest
-      - name: builds branch (the latest files, kept small)
-        run: |
-          git config user.name "github-actions[bot]"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout --orphan builds-tmp && git rm -rq --cached . && rm -rf -- * .github 2>/dev/null || true
-          cp dl/* . && printf 'Latest Patang Wars app files (build %s). Older builds: see Releases.\n' "$APP_BUILD" > README.md
-          git add -A && git commit -qm "Apps, build $APP_BUILD" && git push -f origin HEAD:builds
