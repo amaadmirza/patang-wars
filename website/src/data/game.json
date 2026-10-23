@@ -1,0 +1,258 @@
+{
+ "threads": [
+  {
+   "id": "cotton",
+   "name": "Plain Cotton",
+   "tier": "Beginner",
+   "color": "#e8dcc0",
+   "note": "Untreated cotton. Cannot cut, but tough and cheap. Good for practice.",
+   "stats": {
+    "cut": 1,
+    "strength": 3,
+    "weight": 3
+   },
+   "price": 0
+  },
+  {
+   "id": "manjha",
+   "name": "Glass Manjha",
+   "tier": "Standard",
+   "color": "#ff5ea8",
+   "note": "Cotton coated with glue and powdered glass. The traditional cutter: sharp but brittle.",
+   "stats": {
+    "cut": 4,
+    "strength": 2,
+    "weight": 3
+   },
+   "price": 0
+  },
+  {
+   "id": "cerol",
+   "name": "Cerol",
+   "tier": "Standard",
+   "color": "#f2d21b",
+   "note": "Brazilian ground-quartz coating. Even cut, moderate strength.",
+   "stats": {
+    "cut": 3,
+    "strength": 3,
+    "weight": 3
+   },
+   "price": 200
+  },
+  {
+   "id": "chilena",
+   "name": "Chilena",
+   "tier": "Advanced",
+   "color": "#3ad6c5",
+   "note": "Braided nylon with abrasive. Best balance of strength and bite.",
+   "stats": {
+    "cut": 4,
+    "strength": 4,
+    "weight": 2
+   },
+   "price": 350
+  },
+  {
+   "id": "nylon",
+   "name": "Smooth Nylon",
+   "tier": "Standard",
+   "color": "#5aa8ff",
+   "note": "Very strong and light, but almost no cutting power. Wins by not breaking.",
+   "stats": {
+    "cut": 1,
+    "strength": 5,
+    "weight": 1
+   },
+   "price": 250
+  },
+  {
+   "id": "razor",
+   "name": "Razor Wire Manjha",
+   "tier": "Elite",
+   "color": "#9b6bff",
+   "note": "Extremely aggressive coat, fragile and heavy. Cuts anything, snaps if you pull hard.",
+   "stats": {
+    "cut": 5,
+    "strength": 1,
+    "weight": 4
+   },
+   "price": 600
+  }
+ ],
+ "scenes": [
+  {
+   "id": "lahore",
+   "name": "Lahore Rooftops",
+   "night": false,
+   "wind": 6.5
+  },
+  {
+   "id": "sunset",
+   "name": "Old City Sunset",
+   "night": false,
+   "wind": 5.5
+  },
+  {
+   "id": "basant",
+   "name": "Basant Night",
+   "night": true,
+   "wind": 6
+  },
+  {
+   "id": "walled",
+   "name": "Walled City",
+   "night": false,
+   "wind": 6
+  },
+  {
+   "id": "village",
+   "name": "Village Fields",
+   "night": false,
+   "wind": 5
+  },
+  {
+   "id": "hills",
+   "name": "Margalla Hills",
+   "night": false,
+   "wind": 7
+  },
+  {
+   "id": "desert",
+   "name": "Cholistan Desert",
+   "night": false,
+   "wind": 7.5
+  },
+  {
+   "id": "seaside",
+   "name": "Karachi Seaside",
+   "night": false,
+   "wind": 8
+  },
+  {
+   "id": "towers",
+   "name": "City Towers",
+   "night": false,
+   "wind": 7
+  },
+  {
+   "id": "monsoon",
+   "name": "Monsoon Clouds",
+   "night": false,
+   "wind": 8.5
+  },
+  {
+   "id": "winter",
+   "name": "Foggy Winter Dawn",
+   "night": false,
+   "wind": 4.5
+  },
+  {
+   "id": "valley",
+   "name": "Mountain Valley",
+   "night": false,
+   "wind": 7
+  }
+ ],
+ "mohallas": [
+  {
+   "name": "Mozang",
+   "size": 2,
+   "diff": "easy",
+   "reward": 150,
+   "note": "A friendly street to start on."
+  },
+  {
+   "name": "Ichhra",
+   "size": 2,
+   "diff": "normal",
+   "reward": 200,
+   "note": "Quick fliers, short tempers."
+  },
+  {
+   "name": "Shahdara",
+   "size": 3,
+   "diff": "normal",
+   "reward": 250,
+   "note": "Three roofs, three good lines."
+  },
+  {
+   "name": "Gawalmandi",
+   "size": 3,
+   "diff": "normal",
+   "reward": 300,
+   "note": "They fight long and they fight late."
+  },
+  {
+   "name": "Bhati Gate",
+   "size": 3,
+   "diff": "hard",
+   "reward": 400,
+   "note": "Basant night on the old city walls."
+  },
+  {
+   "name": "Androon Shehr",
+   "size": 3,
+   "diff": "hard",
+   "reward": 600,
+   "note": "The champions. Beat them to rule Basant."
+  }
+ ],
+ "rewards": {
+  "login": [
+   {
+    "coins": 50
+   },
+   {
+    "coins": 80
+   },
+   {
+    "coins": 100
+   },
+   {
+    "coins": 120
+   },
+   {
+    "coins": 150
+   },
+   {
+    "coins": 200
+   },
+   {
+    "crate": "rare"
+   }
+  ],
+  "crates": [
+   {
+    "id": "basic",
+    "name": "Patang Crate",
+    "price": 150
+   },
+   {
+    "id": "rare",
+    "name": "Rare Crate",
+    "price": 320
+   },
+   {
+    "id": "legend",
+    "name": "Legend Crate",
+    "price": 600
+   }
+  ],
+  "pay": {
+   "cut": 10,
+   "caught": 8,
+   "win": 40,
+   "match": 5,
+   "streak": 5,
+   "max": 400
+  },
+  "start": 300
+ },
+ "counts": {
+  "kites": 175,
+  "patang": 151,
+  "tukkal": 24,
+  "free": 83,
+  "scenes": 12
+ }
+}

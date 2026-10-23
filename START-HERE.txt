@@ -1,7 +1,9 @@
-Bo Kata! v7.0 (pehle Patang Wars) - MOBILE (offline phone game + Android app project)
+Bo Kata! v7.1 (pehle Patang Wars)
 
-- app/www/       poori offline game, phone ke liye (landscape). Yehi Android app ke andar jaati hai.
-                 Computer par test:  cd app/www  &&  python3 -m http.server 8000  ->  http://localhost:8000
-- app/           Android app project (Capacitor 8). APK GitHub Actions par banta hai: app/README-APP.md
-- .github/workflows/build-apps.yml   Android APK + AAB build (iPhone band)
-Signing key yahan shamil NAHI - wo GitHub secrets mein rehti hai.
+README.md        poori project ki guide: kya kahan hai, chalana, APK banana, patang daalna/hatana, kya badalna ho to kahan
+CHANGELOG.md     har version mein kya badla (Roman Urdu)
+QA-REPORT.md     testing ke nateeje
+
+Chalana:   npm install  &&  npm run dev      ->  http://localhost:8080
+APK:       main par push karein -> GitHub Actions khud APK banata hai -> Releases page par download
+Website:   website/ folder (Vue 3 + Vite) - website/README.md

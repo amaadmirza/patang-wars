@@ -176,13 +176,6 @@
       const r = f.w * 0.19; crescent(g, f.cx - r * 0.25, f.cy, r, '#ffffff', '#e30a17', 0.26, 0);
       g.fillStyle = '#ffffff'; star(g, f.cx + r * 0.75, f.cy, r * 0.32, Math.PI);
     } },
-    sa: { name: 'Saudi Arabia', draw(g, f) {
-      g.fillStyle = '#006c35'; g.fillRect(0, 0, f.S, f.S);
-      g.strokeStyle = '#ffffff'; g.lineWidth = Math.max(2, f.w * 0.025); g.lineCap = 'round';   // a sword under a band of script, drawn as plain strokes
-      g.beginPath(); g.moveTo(f.cx - f.w * 0.26, f.cy + f.h * 0.08); g.lineTo(f.cx + f.w * 0.24, f.cy + f.h * 0.08); g.stroke();
-      g.lineWidth = Math.max(1.5, f.w * 0.015);
-      for (let i = 0; i < 6; i++) { const x = f.cx - f.w * 0.22 + i * f.w * 0.085; g.beginPath(); g.moveTo(x, f.cy - f.h * 0.06); g.quadraticCurveTo(x + f.w * 0.03, f.cy - f.h * 0.13, x + f.w * 0.06, f.cy - f.h * 0.04); g.stroke(); }
-    } },
     ae: { name: 'UAE', draw(g, f) { bands(g, f, ['#00732f', '#ffffff', '#000000'], 'h'); g.fillStyle = '#ff0000'; g.fillRect(0, 0, f.x0 + f.w * 0.28, f.S); } },
     cn: { name: 'China', draw(g, f) {
       g.fillStyle = '#de2910'; g.fillRect(0, 0, f.S, f.S); g.fillStyle = '#ffde00';

@@ -26,10 +26,17 @@
   const LEGACY = {}; for (const [a, b] of Object.entries(KITE_RENAMES)) if (!a.includes('/')) LEGACY[newId(b)] = 'png:' + a;
   /** any kite id, old or new, as it is called now */
   const kiteId = id => (typeof id === 'string' && id.startsWith('png:') && Object.prototype.hasOwnProperty.call(KITE_RENAMES, id.slice(4))) ? newId(KITE_RENAMES[id.slice(4)]) : id;
+  /* v7.1: kites taken out of the game - the Pipa, Raia/Wau, Dabba, Parinda and Sitara folders and the Saudi Arabia flag kite.
+   * Anyone who bought one gets exactly what it cost back (once: the kite leaves their record in the same step), and a
+   * workshop kite painted on one of those pictures is moved onto a patang picture. Price = what kitePrice() charged. */
+  const RETIRED_KITES = {"png:aag-tota": 0, "png:chhe-kona-tara": 0, "png:dhaari-chamgadar": 0, "png:firozi-resham": 0, "png:gulabi-resham": 250, "png:hara-tota": 120, "png:jaali-resham": 120, "png:jhalar": 0, "png:kala-dabba": 120, "png:lal-shikra": 0, "png:parda-dabba": 0, "png:peela-tara": 120, "png:pipa-chaand": 0, "png:pipa-chaurasta": 120, "png:pipa-dhaal": 0, "png:pipa-gubbara": 120, "png:pipa-jaali": 250, "png:pipa-sunehri": 0, "png:raia-bartanvi": 250, "png:raia-chakra": 0, "png:raia-mozaik": 120, "png:raia-rangeen": 120, "png:raia-sitara": 120, "png:rang-birangi-chamgadar": 0, "png:safed-chamgadar": 0, "png:shab-dabba": 0, "png:shahi-tota": 120, "png:sunehri-resham": 450, "png:sunehri-tara": 0, "png:tota": 250, "png:wau-billi": 250, "png:wau-chaand": 250, "png:wau-neela": 0, "flag:sa": 150};
+  const RETIRED_DIRS = /^assets\/kites\/(pipa|raia|dabba|parinda|sitara)\//i;
+  const isRetired = id => typeof id === 'string' && Object.prototype.hasOwnProperty.call(RETIRED_KITES, id);
   /** a kite picture's path, old or new, as it is now (workshop kites remember the picture they were painted on) */
   const kiteBase = p => { const m = typeof p === 'string' && /^assets\/kites\/([\w-]+)\/([\w.-]+)\.png$/i.exec(p); if (!m) return p;
     const key = (m[1].toLowerCase() === 'tukkal' && KITE_RENAMES['tukkal/' + m[2]]) ? 'tukkal/' + m[2] : m[2];
-    return Object.prototype.hasOwnProperty.call(KITE_RENAMES, key) ? 'assets/kites/' + KITE_RENAMES[key] + '.png' : p; };
+    const out = Object.prototype.hasOwnProperty.call(KITE_RENAMES, key) ? 'assets/kites/' + KITE_RENAMES[key] + '.png' : p;
+    return RETIRED_DIRS.test(out) ? 'assets/kites/patang/lal-hukam.png' : out; };
   const DEFAULT_KITES = ['png:lal-hukam', 'png:safed-sarv'];   // the starter kites for player 1 and player 2
   // the free starter set (named by their old ids so the set can't drift from what was free before the rename)
   const FREE_KITES = new Set(['png:patangN1', 'png:patangc', 'png:patangN4', 'png:patangt4', 'png:patangt6', 'png:patangt8', 'png:tukkal', 'png:pk1'].map(kiteId));
@@ -38,6 +45,7 @@
   function kitePrice(id) {
     id = kiteId(id);
     if (typeof id !== 'string' || !id || /^(mk:|my:|net:|svg:|made)/.test(id) || FREE_KITES.has(id)) return 0;
+    if (isRetired(id)) return -1;   // taken out of the game: not for sale
     if (/^flag:/.test(id)) return 150;
     const r = hash(LEGACY[id] || id) % 100;   // priced from the id it was sold under before the rename: no price changes
     return r < 45 ? 0 : r < 78 ? 120 : r < 94 ? 250 : 450;
@@ -155,20 +163,27 @@
   /* ---------------- the record ---------------- */
   const blankEcon = (now = Date.now()) => ({ coins: START_COINS, owned: [], coll: {}, daily: { day: dayOf(now), prog: 0, done: false }, weekly: { wk: weekOf(now), cuts: 0, streak: 0, loot: 0 }, career: 0, earned: 0, login: { day: -1, n: 0 }, gift: 0 });
   /** anything read from disk or a browser is cleaned to this exact shape */
-  function cleanEcon(e, stats) {
+  function cleanEcon(e, stats, info) {
     const out = blankEcon();
     if (!e || typeof e !== 'object') { if (stats) out.coins += Math.min(1500, 5 * (stats.cuts | 0) + 3 * (stats.caught | 0)); return out; }   // an older record: a welcome gift for what they already did
     const int = (v, hi) => Math.max(0, Math.min(hi, Math.floor(+v || 0)));
     out.coins = int(e.coins, 1e9); out.earned = int(e.earned, 1e9); out.career = int(e.career, MOHALLAS.length);
     out.owned = Array.isArray(e.owned) ? [...new Set(e.owned.filter(x => typeof x === 'string' && /^(thread|char|kite|spool)\|[\w:.-]{1,40}$/.test(x)).map(migrateKey))].slice(0, 1000) : [];
-    if (e.coll && typeof e.coll === 'object') for (const [k, v] of Object.entries(e.coll).slice(0, 2000)) if (/^[\w:.-]{1,40}$/.test(k)) { const nk = kiteId(k); out.coll[nk] = Math.min(1e6, (out.coll[nk] || 0) + int(v, 1e6)); }
+    // v7.1: retired kites are refunded and leave the record (so this can never pay twice)
+    const gone = out.owned.filter(x => x.startsWith('kite|') && isRetired(x.slice(5)));
+    if (gone.length) {
+      const back = gone.reduce((a, x) => a + Math.max(0, RETIRED_KITES[x.slice(5)] | 0), 0);
+      out.owned = out.owned.filter(x => !gone.includes(x)); out.coins = Math.min(1e9, out.coins + back);
+      if (info) { info.refunded = (info.refunded || 0) + back; info.retired = (info.retired || 0) + gone.length; }
+    }
+    if (e.coll && typeof e.coll === 'object') for (const [k, v] of Object.entries(e.coll).slice(0, 2000)) if (/^[\w:.-]{1,40}$/.test(k)) { const nk = kiteId(k); if (isRetired(nk)) continue; out.coll[nk] = Math.min(1e6, (out.coll[nk] || 0) + int(v, 1e6)); }
     if (e.daily && typeof e.daily === 'object') out.daily = { day: int(e.daily.day, 1e7), prog: int(e.daily.prog, 1000), done: !!e.daily.done };
     if (e.login && typeof e.login === 'object') out.login = { day: Math.floor(+e.login.day) >= 0 ? int(e.login.day, 1e7) : -1, n: int(e.login.n, 1e6) };
     out.gift = int(e.gift, 1e14);
     if (e.weekly && typeof e.weekly === 'object' && typeof e.weekly.wk === 'string') out.weekly = { wk: e.weekly.wk.slice(0, 10), cuts: int(e.weekly.cuts, 1e6), streak: int(e.weekly.streak, 1e4), loot: int(e.weekly.loot, 1e6) };
     return out;
   }
-  const cleanLootIds = (ids, max) => (Array.isArray(ids) ? ids : []).filter(x => typeof x === 'string' && /^[\w:.-]{1,40}$/.test(x) && !/^(mk:|my:|net:)/.test(x)).map(kiteId).slice(0, Math.max(0, max | 0));
+  const cleanLootIds = (ids, max) => (Array.isArray(ids) ? ids : []).filter(x => typeof x === 'string' && /^[\w:.-]{1,40}$/.test(x) && !/^(mk:|my:|net:)/.test(x)).map(kiteId).filter(x => !isRetired(x)).slice(0, Math.max(0, max | 0));
 
   /**
    * Pay out one finished (already checked) match. rec: { cuts, caught, bestStreak, dheelCuts, khainchCuts },
@@ -205,6 +220,6 @@
   const view = (econ, now = Date.now()) => ({ coins: econ.coins, owned: econ.owned.slice(), coll: { ...econ.coll }, career: econ.career, daily: dailyView(econ, now), login: loginView(econ, now), gift: giftView(econ, now),
     weekly: econ.weekly && econ.weekly.wk === weekOf(now) ? { ...econ.weekly } : { wk: weekOf(now), cuts: 0, streak: 0, loot: 0 } });
 
-  return { START_COINS, PAY, THREAD_PRICE, CHAR_PRICE, DAILY, MOHALLAS, KITE_RENAMES, DEFAULT_KITES, LOGIN, GIFT, CRATES, loginView, giftView, claimLogin, claimGift, openCrate, kiteId, kiteBase, kitePrice, spoolPrice, priceOf, rarityOf, owns, buy, itemKey,
+  return { START_COINS, PAY, THREAD_PRICE, CHAR_PRICE, DAILY, MOHALLAS, KITE_RENAMES, RETIRED_KITES, isRetired, DEFAULT_KITES, LOGIN, GIFT, CRATES, loginView, giftView, claimLogin, claimGift, openCrate, kiteId, kiteBase, kitePrice, spoolPrice, priceOf, rarityOf, owns, buy, itemKey,
     dayOf, dailyFor, dailyView, weekOf, weekEndsIn, blankEcon, cleanEcon, cleanLootIds, payMatch, view };
 });

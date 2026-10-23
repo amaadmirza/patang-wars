@@ -1,3 +1,40 @@
+# v7.1 SQA (full pass, after the rotation change)
+
+Driven through the real UI of the production builds (no debug hooks), every step checked for console errors, HTTP errors
+and stuck screens. Tools: `tools/qa/` (see README).
+
+| Suite | Build | Result |
+|---|---|---|
+| Splash, home, daily login + gift, shop (5 tabs, buy, retired kites gone), kites screen (tabs, locked kite offer), Mohalla, collection, trophies, how to play, leaderboard, settings (7 tabs, new switch, themes), mode/bot pickers, Festival, keyboard flying, pause/resume, settings in match, 20 s busy match, quit, Duel, Two players, Mohalla match, tutorial, online panel | Web, computer 1366x768 | **28/28** |
+| Same, plus zoom slider drag and turning the phone upright mid-match | Web, phone 844x390 | **28/28** |
+| Same, offline (online shows "coming soon") | Android app bundle (`app/www`) | **27/27** |
+| Host (computer) creates a room, friend (phone) joins by invite link, both in one match, scoreboard shows both, friend leaves cleanly | Web server | **10/10** |
+| 6 minutes of Hard Festival, 10 kites (3 min hands-off idle spin, 3 min flown) | Dev | 103 cuts, 48 loot, 0 errors, no broken kites, max 2 pechas on one line |
+| A real 2-minute Duel to the end | Web server | results shown, +5 coins paid by the server |
+| `npm test` / physics regression (`client/tools/test-physics.js`) | | 121/121, 50/50 |
+| Performance, same seed, 10 kites Hard, 4x slower CPU, 2x resolution | | v7.0 9.4 fps -> v7.1 14 fps; frames over 100 ms 56 -> 17 |
+
+**Bug found and fixed:** after "Quit to home" from the pause menu, the pause overlay kept its open state and could flash for a
+frame at the start of the next match. `endMatch()` now closes it.
+
+**Rotation (measured, not eyeballed):** a kite tracker (`tools/qa/track.py`) measured the reference video frame by frame:
+left alone, the kite turns steadily at ~150-220 deg/s in one direction, stops within ~0.25 s when pulled and flies along its
+nose. v7.0 measured 3 deg/s left alone (frozen). v7.1: ~210 deg/s left alone, starts ~0.4 s after letting go, stops at once on
+FLY / khainch / tunka / steer, holds its height (16.7 m for 60 s hands-off) and flies within a few degrees of where its nose
+was showing.
+
+# v7.1 QA
+
+| # | Request | What was found | Fix | Measured |
+|---|---|---|---|---|
+| 1 | Jerk after the splash | The tap requested full screen + landscape, built the home screen and started the fade in the same instant; the page resized (portrait -> landscape) mid-fade, so the hub re-laid itself out while visible; the login card popped 0.7 s in | Hub built under the splash while kites load; splash stays opaque until the size settles; one GPU crossfade; login card after the fade | Play button positions while visible: 2 -> 1; menu build no longer inside the fade (74 ms gap -> even ~17 ms frames) |
+| 2 | Zoom slider on the left | +/- pill on the right | Vertical slider on the left edge (drag up = in, down = out, + / - ends, pinch still works, handle follows zoom, remembered) | Drag up 60 px: 1.0 -> 2.2x, down: -> 0.55x, saved to profile |
+| 3 | Stuck in pecha, low graphics | (a) up to 12 catch-up physics steps after a slow frame (chain of slow frames); (b) pecha zoom forced every rooftop figure to re-paint in one frame; (c) quality controller fell to 0.75x on 3x phones (blur) | (a) offline cap 4 steps/frame; (b) stretch old sprite, budgeted re-paints, small figures re-paint less; (c) start 2x, floor 1x, recovers on phones; mipmapped kites; opaque canvas; no sky overdraw; scoreboard 6 Hz | Same seed, 10 kites Hard, 4x CPU, 844x390@3x, both at 2x: 9.8 -> 13.8 fps, physics 11 -> 4 ms, drawing JS 42 -> 22 ms, frames >100 ms 48 -> 20 |
+| 4-9 | Remove Saudi flag kite + parinda/pipa/raia/dabba/sitara | 33 pictures + 1 flag kite | Removed; catalog 208 -> 175; tabs removed; full refund once (local + server), equipped kite -> starter, workshop kites moved to a patang picture | Save owning 3 retired kites: +850 coins, toast shown, k1 -> lal-hukam |
+| 10-11 | Flight feel, bending sides | Physics computed bank/pitch, renderer drew a flat rotated picture | Sail drawn as a bowed 3D mesh: bow under load, bank into turns, springy rock, wing-tip flutter, shading; slack line droops (drawing only) | 121/121 tests unchanged |
+
+Emulated phones in headless Chromium have no GPU, so absolute fps are pessimistic (fills are much cheaper on a real phone). Please try on your own phones.
+
 # Bo Kata! v7.0 — SQA report
 
 | Check | Result |

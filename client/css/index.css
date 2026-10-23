@@ -271,6 +271,10 @@ input[type=range]{accent-color:var(--accent);width:100%}
 /* ---------- splash ---------- */
 .splash{z-index:50;background:radial-gradient(110% 80% at 70% 0%,#ff9a4d 0%,#d9607a 28%,#4b3a7a 58%,#141a33 85%);transition:opacity .5s}
 .splash.out{opacity:0;pointer-events:none}
+/* v7.1: one clean GPU crossfade to the home screen (built underneath while loading); the splash's own kites stop moving */
+.splash{will-change:opacity;transition:opacity .45s cubic-bezier(.4,0,.2,1)}
+.splash.out .splash-sky img{animation-play-state:paused}
+#splashGo.going{transform:scale(.97);filter:brightness(.95)}
 .splash-sky{position:absolute;inset:0;overflow:hidden;pointer-events:none}
 .splash-sky img{position:absolute;width:var(--s,80px);filter:drop-shadow(0 10px 14px rgba(0,0,0,.35));animation:rise var(--d,14s) linear infinite;animation-delay:var(--dl,0s);opacity:.6}
 @keyframes rise{0%{transform:translate(0,110vh) rotate(-8deg)}50%{transform:translate(var(--dx,30px),40vh) rotate(8deg)}100%{transform:translate(0,-30vh) rotate(-6deg)}}
@@ -1189,14 +1193,20 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
 @keyframes live-blink{50%{opacity:.35}}
 @media (prefers-reduced-motion:reduce){.rail-live{animation:none}}
 @media (max-height:430px) and (orientation:landscape){.hub .rail-b.rail-online span{display:block;font-size:9px;font-weight:800}.hub .rail-b.rail-online svg{width:38%;height:38%}}
-/* v6.5 touch zoom: a slim +/- pill on the right edge, in open sky away from FLY / KHAINCH / DHEEL */
-#zoomPill{display:none;position:absolute;right:max(10px,env(safe-area-inset-right));top:42%;transform:translateY(-50%);flex-direction:column;align-items:center;
-  background:rgba(12,18,32,.55);border:1px solid rgba(255,255,255,.18);border-radius:22px;padding:3px;z-index:6;backdrop-filter:blur(4px)}
-#zoomPill button{width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.1);color:#fff;font:700 22px/1 Inter,system-ui,sans-serif;cursor:pointer}
-#zoomPill button:active{background:rgba(255,200,61,.5)}
-#zoomPill i{width:18px;height:1px;background:rgba(255,255,255,.25);margin:3px 0}
-@media (pointer:coarse){#game:not(.hidden) #zoomPill{display:flex}}
-#game.replaying #zoomPill{display:none!important}
+/* v7.1 touch zoom: a vertical slider on the LEFT edge, in the open band between your card and the steer buttons.
+   Drag the handle up = zoom in, down = zoom out; + / - at the ends step it. */
+#zoomSlider{display:none;position:absolute;left:max(8px,var(--sa-l,0px));top:max(36%,140px);height:min(44vh,210px);width:46px;flex-direction:column;align-items:center;z-index:6;touch-action:none;user-select:none;-webkit-user-select:none}
+#zoomSlider .zs-end{width:30px;height:24px;flex:none;border:0;border-radius:9px;background:rgba(12,18,32,.45);color:#fff;font:800 17px/1 Inter,system-ui,sans-serif;padding:0;cursor:pointer;touch-action:none}
+#zoomSlider .zs-end:active{background:rgba(255,200,61,.55)}
+#zoomSlider .zs-track{position:relative;flex:1;width:46px;margin:23px 0;cursor:ns-resize;touch-action:none;pointer-events:auto}
+#zoomSlider .zs-track::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:4px;margin-left:-2px;border-radius:2px;background:rgba(255,255,255,.28);box-shadow:0 0 0 1px rgba(0,0,0,.18)}
+#zoomSlider .zs-fill{position:absolute;left:50%;bottom:0;width:4px;margin-left:-2px;border-radius:2px;background:#ffc83d;height:50%}
+#zoomSlider .zs-thumb{position:absolute;left:50%;top:0;width:36px;height:42px;margin:-21px 0 0 -18px;border-radius:12px;display:grid;place-items:center;color:#fff;
+  background:rgba(12,18,32,.72);border:1.5px solid rgba(255,255,255,.55);box-shadow:0 3px 10px rgba(0,0,0,.3);will-change:transform;transition:background .15s,border-color .15s}
+#zoomSlider.drag .zs-thumb{background:rgba(255,182,39,.85);border-color:#fff;color:#2a1606}
+@media (pointer:coarse){#game:not(.hidden) #zoomSlider{display:flex}}
+#game.replaying #zoomSlider{display:none!important}
+@media (max-height:340px){#zoomSlider{top:34%;height:30vh}#zoomSlider .zs-end{display:none}}
 
 /* ======================================================================================================
  * v6.5 GAME SKIN - every menu screen in the hub's style: framed panels with a cream edge, heavy titles, raised tabs,
@@ -1308,7 +1318,7 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
 button,label,select,input[type=checkbox],input[type=range],.it,.th,.pk,.sc,.ev-b,.rail-b,.stage-daily{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 img{-webkit-user-drag:none}
 @media (pointer:coarse){
-  .panel,.hud-bar,#score,#tut,#touch button,#zoomPill,.toast,#feed div,.mode,.wallet,.daily,.rank-card,.settings-card,.topbar{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .panel,.hud-bar,#score,#tut,#touch button,#zoomSlider .zs-thumb,.toast,#feed div,.mode,.wallet,.daily,.rank-card,.settings-card,.topbar{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
   #game .hud-bar{background:rgba(12,18,32,.82)}#touch button{background:rgba(12,18,32,.7)}#tut{background:rgba(12,18,32,.95)}
   .menu-sky img,.splash-sky img,.stage-art .sa-kite{filter:none!important}
   .menu-sky img,.splash-sky img{will-change:transform}
@@ -1360,7 +1370,6 @@ body.in-match #menu .menu-sky img{animation:none}
 
 /* ---- in a match on a phone: the top bar and the HUD card never overlap ---- */
 #game #topLeft{left:max(10px,var(--sa-l));top:max(8px,var(--sa-t))}
-#game #zoomPill{right:max(10px,var(--sa-r))}
 
 /* ---- the hub ---- */
 .hub-top .hub-gear{position:static;order:3;width:40px;height:40px;flex:none;margin-left:2px}

@@ -37,9 +37,8 @@
   const cutTargetOf = m => /^c\d+$/.test(String(m)) ? +String(m).slice(1) : 0;
   // kite grid tabs, by shape / how it flies
   const KITE_TYPES = [
-    { id: 'mine', label: 'My Kites' }, { id: 'flags', label: 'Flags' }, { id: 'basant', label: 'Basant set' }, { id: 'all', label: 'All' }, { id: 'patang', label: 'Patang' }, { id: 'tukkal', label: 'Tukkal' }, { id: 'pipa', label: 'Pipa' },
-    { id: 'bird', label: 'Bird / Bat' }, { id: 'delta', label: 'Raia / Wau' }, { id: 'eddy', label: 'Box (Caixao)' }, { id: 'rokkaku', label: 'Star' }
-  ];
+    { id: 'mine', label: 'My Kites' }, { id: 'flags', label: 'Flags' }, { id: 'basant', label: 'Basant set' }, { id: 'all', label: 'All' }, { id: 'patang', label: 'Patang' }, { id: 'tukkal', label: 'Tukkal' }
+  ];   // v7.1: Pipa, Bird/Bat, Raia/Wau, Box and Star kites were taken out of the game
   // where the two kanni strings tie onto each shape, as a fraction of sprite height from its centre (- = nose):
   // the top string at the joint of spine and bow (kaman), the bottom string low on the spine
   const BRIDLE = { patang: [-0.12, 0.34], tukkal: [-0.1, 0.32], pipa: [-0.1, 0.32], bird: [-0.16, 0.28], delta: [-0.22, 0.24], eddy: [-0.18, 0.28], rokkaku: [-0.22, 0.24] };
@@ -171,9 +170,11 @@
   // v6.3 kite renames: move every saved kite id / picture onto its new name (purchases are moved by economy.js)
   if (saved && typeof saved === 'object') {
     for (const k of ['k1', 'k2']) if (typeof saved[k] === 'string') saved[k] = KE.kiteId(saved[k]);
+    // v7.1: a kite taken out of the game (Pipa, Raia/Wau, Dabba, Parinda, Sitara, the Saudi flag) is swapped for the starter kite
+    ['k1', 'k2'].forEach((k, i) => { if (KE.isRetired(saved[k])) { saved[k] = KE.DEFAULT_KITES[i]; saved.retiredNote = (saved.retiredNote || 0) + 1; } });
     if (Array.isArray(saved.myKites)) saved.myKites.forEach(migrateMade);
     if (saved.makerLast2) migrateMade(saved.makerLast2);
-    if (saved.econLocal && typeof saved.econLocal === 'object') saved.econLocal = KE.cleanEcon(saved.econLocal, saved.stats);
+    if (saved.econLocal && typeof saved.econLocal === 'object') { const info = {}; saved.econLocal = KE.cleanEcon(saved.econLocal, saved.stats, info); if (info.retired) saved.retiredRefund = (saved.retiredRefund || 0) + info.refunded; }
     if (saved.econNet && typeof saved.econNet === 'object') { const n = saved.econNet; if (Array.isArray(n.owned)) n.owned = [...new Set(n.owned.map(x => typeof x === 'string' && x.startsWith('kite|') ? 'kite|' + KE.kiteId(x.slice(5)) : x))]; if (n.coll && typeof n.coll === 'object') { const c = {}; for (const [id, v] of Object.entries(n.coll)) c[KE.kiteId(id)] = (c[KE.kiteId(id)] || 0) + (+v || 0); n.coll = c; } }
   }
   saved.k1 = saved.k1 || DEF_K[0]; saved.k2 = saved.k2 || DEF_K[1]; saved.t1 = saved.t1 || 'manjha'; saved.t2 = saved.t2 || 'manjha';
@@ -226,7 +227,8 @@
 
   /* ---------------- game state ---------------- */
   let G = null; // active match
-  const canvas = $('#view'), ctx = canvas.getContext('2d');
+  // v7.1: an opaque canvas - the sky always covers it, so the browser no longer blends the whole game over the page
+  const canvas = $('#view'), ctx = canvas.getContext('2d', { alpha: false });
   const keys = {}; const touch = {};
 
   function slotY(i) { const SP = 11; const n = Math.ceil(i / 2) * SP; return i === 0 ? 0 : (i % 2 ? n : -n); }
@@ -370,7 +372,7 @@
   const foes2 = (a, b) => foes(a, b);
   const foes = (a, b) => !G.teams || teamOf(a) !== teamOf(b);
   function teamTotals() { const t = [{ cut: 0, pts: 0, n: 0 }, { cut: 0, pts: 0, n: 0 }]; for (const p of G.players) { const x = t[teamOf(p)]; x.cut += p.score.cut; x.pts += pointsOf(p); x.n++; } return t; }
-  function endMatch() { $('#replayUI').classList.add('hidden'); $('#game').classList.remove('replaying'); const wasOnline = G && G.online, wasMh = G && G.mode === 'mohalla'; if (wasOnline) onlineLeftMatch(); else if (G && !G.over) netEnd(true); G = null; if (wasOnline) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); $('#game').classList.add('hidden'); $('#swap').classList.add('hidden'); $('#results').classList.add('hidden'); $('#tut').classList.add('hidden'); return showOnline(); } ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); $('#game').classList.add('hidden'); $('#swap').classList.add('hidden'); $('#results').classList.add('hidden'); $('#tut').classList.add('hidden'); renderWallet(); if (wasMh) openMohalla(); else showMenu(); }
+  function endMatch() { $('#replayUI').classList.add('hidden'); $('#pause').classList.add('hidden'); /* v7.1: never carried into the next match */ $('#game').classList.remove('replaying'); const wasOnline = G && G.online, wasMh = G && G.mode === 'mohalla'; if (wasOnline) onlineLeftMatch(); else if (G && !G.over) netEnd(true); G = null; if (wasOnline) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); $('#game').classList.add('hidden'); $('#swap').classList.add('hidden'); $('#results').classList.add('hidden'); $('#tut').classList.add('hidden'); return showOnline(); } ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); $('#game').classList.add('hidden'); $('#swap').classList.add('hidden'); $('#results').classList.add('hidden'); $('#tut').classList.add('hidden'); renderWallet(); if (wasMh) openMohalla(); else showMenu(); }
 
   /* ---------------- round end & results ---------------- */
   /* ranking shared by the results screen and the record sent to the server. A tie is NOT a win: a player level with
@@ -413,7 +415,7 @@
 
   /* ---------------- first-time tutorial ---------------- */
   const TUT = [
-    { text: 'Hold <b>&uarr;</b> (Fly). The kite flies wherever its <b>nose</b> points.', touch: 'Hold <b>FLY</b>. The kite flies wherever its <b>nose</b> points.', swipe: 'Put a finger on the sky and drag it a little <b>down</b> &#9660; and hold: FLY. The kite flies wherever its <b>nose</b> points.', done: c => c.fly > 1.2 },
+    { text: 'Hold <b>&uarr;</b> (Fly). The kite flies wherever its <b>nose</b> points. Let go and it slowly turns by itself - Fly again when the nose points your way.', touch: 'Hold <b>FLY</b>. The kite flies wherever its <b>nose</b> points. Let go and it slowly turns by itself - FLY again when the nose points your way.', swipe: 'Put a finger on the sky and drag it a little <b>down</b> &#9660; and hold: FLY. The kite flies wherever its <b>nose</b> points. Let go and it slowly turns by itself.', done: c => c.fly > 1.2 },
     { text: 'Hold <b>&larr;</b> or <b>&rarr;</b> to turn the nose, then Fly again to go that way.', touch: 'Hold <b>&#9664;</b> or <b>&#9654;</b> to turn the nose, then FLY again to go that way.', swipe: 'Drag <b>left or right</b> to turn the nose (further = faster), then drag down to fly that way.', done: c => c.turn > 1.2 },
     { swipe: '<b>Tunka:</b> <b>tap</b> the sky quickly 3 times. Each short tug straightens the kite and makes it dart.', touch: '<b>Tunka:</b> tap <b>FLY</b> quickly 3 times. Each short tug straightens the kite and makes it dart.', text: '<b>Tunka:</b> tap <b>&uarr;</b> quickly 3 times. Each short tug straightens the kite and makes it dart.', done: c => c.tap >= 3 },
     { swipe: '<b>Dheel:</b> drag <b>up</b> &#9650; and hold to let line out. A loose patang turns by itself - tap for a tunka when its nose points where you want.', touch: '<b>Dheel:</b> hold <b>DHEEL</b> to let line out. A loose patang turns by itself - tap FLY when its nose points where you want.', text: '<b>Dheel:</b> hold <b>D</b> to let line out. A loose patang starts to turn by itself - tunka when its nose points where you want.', done: c => c.send > 1.5 },
@@ -540,6 +542,17 @@
    * how a real patang is pointed: let it spin on slack line, then tunka the moment the nose faces where you want.
    * Kanni balance: an off-centre knot makes the kite keep sliding/turning toward that wing.
    * Launch: a new kite starts in the flier's hand and is let go into the wind; it climbs while line pays out. */
+  // the kite takes up the direction its turning sail is showing (v7.1 idle ghoomna): the flight nose jumps to it - which
+  // is invisible, the drawn angle doesn't change - so a pull sends it exactly where you saw the nose point
+  function kiteTakeAim(k) {
+    if (!k.idleAng) return; k.headingAngle += k.idleAng; k.idleAng = 0;
+    // the nose vector, rebuilt the way physics.js does (frame around the line: L radial, U up-tangent, Wd right-tangent),
+    // so a tunka in this same step already shoots the new way
+    const d = [k.p[0] - k.anchor[0], k.p[1] - k.anchor[1], k.p[2] - k.anchor[2]], r = Math.hypot(...d) || 1e-6, L = d.map(x => x / r);
+    let U = [-L[0] * L[2], -L[1] * L[2], 1 - L[2] * L[2]], u = Math.hypot(...U); U = u < 1e-4 ? [1, 0, 0] : U.map(x => x / u);
+    let W = [L[1] * U[2] - L[2] * U[1], L[2] * U[0] - L[0] * U[2], L[0] * U[1] - L[1] * U[0]], w = Math.hypot(...W); W = w < 1e-4 ? [0, -1, 0] : W.map(x => x / w);
+    const c = Math.cos(k.headingAngle), sn = Math.sin(k.headingAngle); k.nose = [U[0] * c + W[0] * sn, U[1] * c + W[1] * sn, U[2] * c + W[2] * sn];
+  }
   function kiteHandling(p, k, inp) {
     // v6.3 pecha khainch: hauling in fast while hooked loads the sail and the kite CLIMBS (more air over it), the way a
     // real khainch keeps the fight up in the sky. Without this a held khainch dragged the kite straight down onto the
@@ -549,7 +562,8 @@
       k.v[2] += 11 * lift * DT;
       if (hgt < 6) k.v[2] = Math.max(k.v[2], 1.5);   // never hauled into the parapet mid-pecha
     }
-    if (k.free || p.landing) return;
+    if (k.free || p.landing) { k.idleAng = 0; k.idleE = 0; return; }
+    if (k.idleAng && (inp.thrust || inp.pull || inp.tunka || inp.turn || inp.send || k.launch)) { k.idleE = 0; k.idleT = 0; kiteTakeAim(k); }
     const spec = k.spec, loose = 1 - clamp(spec.stability ?? 0.5, 0, 1);
     /* ---- v6.4 FLYING: what a real flier's hands do without thinking (measured with a "beginner" test player: the kite
      * spent two thirds of the time below 15 m, mostly stuck straight overhead, and one wrong turn drove it into the roof) ----
@@ -601,6 +615,22 @@
       // keep pulling the nose back up even while flying, so the only way to cross the sky was to hold steer too, which
       // turned it in circles.)
       const stab = clamp(spec.stability ?? 0.5, 0, 1), still = (inp.thrust || inp.pull || k.tunkaT > 0.5) ? 0 : 1;
+      /* v7.1 IDLE GHOOMNA - measured against the reference video: there a patang left alone (nobody pulling) keeps turning
+       * steadily, ~150-220 deg/s (a turn every 2-2.5 s), in one direction, and a pull stops it dead within ~0.25 s so it
+       * flies straight along its nose; let go again and it starts turning again, now and then the other way. Ours froze
+       * nose-up instead (3 deg/s) - the "rotation" difference. Your own kite now does what the video's does (Settings ->
+       * General -> "Kite turns when left alone", on by default).
+       * The turn is the SAIL's (k.idleAng, added to the drawn angle after the physics step): the line keeps the kite hanging
+       * in its hover while it turns, exactly as on a real roof - if the flight nose turned with it, the lift swept round
+       * with the nose and the kite sank onto the roof in ~12 s. The moment you pull, tunka or steer, the kite takes up the
+       * direction its nose is showing and flies that way (see kiteTakeAim). Bots and the pecha rules are untouched. */
+      const idleOk = p.ctrl.startsWith('human') && saved.idleSpin !== false && still && !inp.send && (k.sendE || 0) < 0.1 && !k.launch && !k.onGround && !hooked && !k.landingMode;
+      k.idleT = idleOk ? (k.idleT || 0) + DT : 0;
+      if (k.idleT > 0.3 && k.idleT - DT <= 0.3) k.idleDir = (k.idleDir ? (Math.random() < 0.3 ? -k.idleDir : k.idleDir) : Math.sign(dir) || 1);   // a new spin: usually the same way, sometimes the other
+      const wantI = k.idleT > 0.3 ? 1 : 0;
+      k.idleE = (k.idleE || 0) + (wantI - (k.idleE || 0)) * Math.min(1, DT / (wantI ? 0.22 : 0.06));   // eases in over ~0.25 s
+      if (k.idleE > 0.002) { const e = k.idleE, sm = e * e * (3 - 2 * e); k.idleAng = (k.idleAng || 0) + (k.idleDir || 1) * (2.6 + loose * 1.6) * (k.turnMul || 1) * sm * DT; }
+      else if (!idleOk) kiteTakeAim(k);
       const spinning = clamp(k.spinE || 0, 0, 1), right = taut * (1 - spinning) * (1 - spinning);   // no tug-of-war with the ghoomna
       const hw = Math.atan2(Math.sin(k.headingAngle), Math.cos(k.headingAngle));   // -pi..pi: the short way back to nose-up
       k.headingAngle -= 2 * Math.sin(hw / 2) * (0.7 + 2.6 * stab) * right * still * DT;   // strongest when upside down, so it never just dives in
@@ -613,7 +643,7 @@
       const rate = Math.sign(dir) * (1.6 + loose * 6.4) * (k.turnMul || 1) * k.spinE * k.spinE * (3 - 2 * k.spinE);   // smoothstep; v6: a patang now spins about once a second on dheel (was once every ~2 s - too slow)
       k.headingAngle += rate * DT;
       if (k.spinE > 0.15) k.headingVel *= Math.exp(-3 * DT);   // while it's turning by itself, the old steer momentum fades
-    } else k.spinE = (k.spinE || 0) * Math.exp(-DT / 0.2);
+    } else { k.spinE = (k.spinE || 0) * Math.exp(-DT / 0.2); k.idleE = 0; k.idleT = 0; kiteTakeAim(k); }
     if (k.launch) {
       // let go from the hand: the wind takes it up and out while line pays out behind it (the reel's
       // close-range safety pays out by itself under 14 m), a tunka lifts it faster
@@ -1209,7 +1239,6 @@
     const tut = $('#tut'), tb = tut && !tut.classList.contains('hidden') ? tut.getBoundingClientRect() : null;
     let x = IS_TOUCH ? W - w - Math.max(10, SAFE.r) : 12;
     const y = IS_TOUCH ? (tb && tb.left < W - w ? tb.bottom + 8 : Math.max(8, SAFE.t)) : H - h - 12;
-    if (IS_TOUCH) { const zp = $('#zoomPill'), zr = zp && zp.offsetWidth ? zp.getBoundingClientRect() : null; if (zr && y + h > zr.top - 6) x = zr.left - w - 8; }   // never over the zoom buttons
     lootView.box = { x, y, w, h };
     ctx.save(); ctx.globalAlpha = lootView.alpha * (big ? 1 : 0.94);
     ctx.fillStyle = 'rgba(0,0,0,.3)'; rrectAt(x - 2, y - 2, w + 4, h + 4, 10); ctx.fill();
@@ -1363,7 +1392,7 @@
    * answers 404) plays from this device. */
   function loadProfile(tries = 0) {
     api('/api/profile').then(r => { NET.ready = true; NET.account = r.account || null; useProfile(r.profile); autoRestore(r);
-        if (!loadProfile.offered && $('#splash').classList.contains('out')) { loadProfile.offered = true; setTimeout(() => { if (!G && loginNow().can && !$('#menu').classList.contains('hidden') && saved.tutDone) openLogin('login'); }, 400); } })
+        if (!loadProfile.offered && $('#splash').classList.contains('hidden')) { loadProfile.offered = true; setTimeout(() => { if (!G && loginNow().can && !$('#menu').classList.contains('hidden') && saved.tutDone) openLogin('login'); }, 400); } })
       .catch(e => {
         if (e.status === 404 || e.status === 405) { NET.online = false; if (typeof renderWallet === 'function') renderWallet(); return; }
         clearTimeout(loadProfile.t); loadProfile.t = setTimeout(() => loadProfile(tries + 1), Math.min(20000, 1000 * 2 ** Math.min(tries, 5)));
@@ -1974,6 +2003,7 @@
       }
       kiteHandling(p, k, inp);
       k.step(DT, G.wind, inp);
+      if (k.idleAng) k.bodyAngle += k.idleAng;   // the sail turning on its own (drawn, sent online, replayed)
       if (p.landing && !k.free) {
         // the kite is home when it's near the hands, or it touched the roof, or (safety) after a few seconds of
         // reeling - a gust holding it out used to leave the player reeling forever with no swap screen
@@ -2197,12 +2227,13 @@
   const STARS = Array.from({ length: 90 }, (_, i) => ({ az: (i * 2.618) % 6.283, el: 0.05 + ((i * 0.618) % 1) * 1.4, b: 0.4 + ((i * 0.31) % 1) * 0.6 }));
   const dirPt = (cam, az, el, r) => [cam.pos[0] + Math.cos(el) * Math.cos(az) * r, cam.pos[1] + Math.cos(el) * Math.sin(az) * r, cam.pos[2] + Math.sin(el) * r];
   function drawWorld(cam, w, h) {
+    const SK = (KF_DEBUG && window.__skip) || {};
     const sc = G.sc, night = !!sc.night, fl = cam.fl, hzY = cam.cy + fl * Math.tan(cam.pitch);
     const yAt = e => cam.cy - fl * Math.tan(Math.min(e - cam.pitch, 1.5));
     const y0 = yAt(0), y1 = yAt(1.35), g = ctx.createLinearGradient(0, y0, 0, y1);
     const stops = sc.sky || [[0, '#1466dc'], [0.3, '#0a4cc4'], [0.7, '#0a7ee2'], [1.05, '#08b4f0'], [1.35, '#00dfff']];
     for (const [e, col] of stops) g.addColorStop(clamp((y0 - yAt(e)) / (y0 - y1), 0, 1), col);
-    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, clamp(Math.ceil(hzY) + 2, 0, h));   // the ground paints below the horizon: no overdraw
     if (sc.nightDrawn) drawNightSky(cam, w, h, sc);
     const sun = sc.sun || (sc.sky ? null : { az: 0.55, el: 0.8, c: '#ffffff' });
     const sp = sun && project(cam, dirPt(cam, sun.az, sun.el, 1500));
@@ -2211,7 +2242,7 @@
       gr.addColorStop(0, 'rgba(255,230,160,.9)'); gr.addColorStop(0.2, 'rgba(255,190,110,.45)'); gr.addColorStop(1, 'rgba(255,150,90,0)');
       ctx.fillStyle = gr; ctx.fillRect(sp.x - r * 5, sp.y - r * 5, r * 10, r * 10);
       ctx.fillStyle = sun.c; ctx.beginPath(); ctx.arc(sp.x, sp.y, r, 0, 7); ctx.fill();
-    } else if (sp) {
+    } else if (sp && !SK.sun) {
       const r = fl * 0.2, gr = ctx.createRadialGradient(sp.x, sp.y, 0, sp.x, sp.y, r);
       gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.18, 'rgba(255,255,255,.95)'); gr.addColorStop(0.3, 'rgba(255,255,255,.35)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
       ctx.fillStyle = gr; ctx.fillRect(sp.x - r, sp.y - r, r * 2, r * 2);
@@ -2222,7 +2253,7 @@
       const s = fl * 0.028 * c.sc * (sc.overcast ? 1.9 : 1); ctx.fillStyle = sc.overcast ? (c.dk ? 'rgba(92,100,112,.88)' : 'rgba(196,202,210,.9)') : sc.dusk ? 'rgba(255,190,170,.75)' : sc.fog ? 'rgba(255,240,236,.7)' : 'rgba(255,255,255,.92)';
       for (const [ex, ey, rx, ry] of [[0, 0, 1.6, 0.7], [-1, 0.15, 1, 0.55], [1.05, 0.1, 0.9, 0.5]]) { ctx.beginPath(); ctx.ellipse(q.x + ex * s, q.y + ey * s, rx * s, ry * s, 0, 0, 7); ctx.fill(); }
     }
-    if (sc.skyline) drawSkyline(cam, w, h, sc, hzY);
+    if (sc.skyline && !SK.skyline) drawSkyline(cam, w, h, sc, hzY);
     const im = sc.pano && panoImgs[sc.pano];
     if (im && im.complete && im.naturalWidth && hzY > -h) {
       const sw = im.naturalWidth, sh = im.naturalHeight, sc2 = fl * 2 * Math.PI / sw, dh = sh * sc2, bottom = hzY + 22 * sc2;
@@ -2236,8 +2267,8 @@
       const gc = sc.ground || ['#f2dfa8', '#cfa95f'], gl = sc.grid || 'rgba(120,80,20,.12)';
       gg.addColorStop(0, gc[0]); gg.addColorStop(1, gc[1]); ctx.fillStyle = gg; ctx.fillRect(0, gy, w, h - gy);
       const gs = QUAL.low ? 20 : 10;   // ground grid: half the lines in low-quality mode
-      for (let gx = -160; gx <= 200; gx += gs) polyline(cam, Array.from({ length: 13 }, (_, i) => [gx, -120 + i * 20, 0]), gl, 1, 1);
-      for (let gy2 = -120; gy2 <= 120; gy2 += gs) polyline(cam, Array.from({ length: 13 }, (_, i) => [-160 + i * 30, gy2, 0]), gl, 1, 1);
+      if (!SK.grid) for (let gx = -160; gx <= 200; gx += gs) polyline(cam, Array.from({ length: 13 }, (_, i) => [gx, -120 + i * 20, 0]), gl, 1, 1);
+      if (!SK.grid) for (let gy2 = -120; gy2 <= 120; gy2 += gs) polyline(cam, Array.from({ length: 13 }, (_, i) => [-160 + i * 30, gy2, 0]), gl, 1, 1);
     }
     if (sc.fog) {   // winter dawn: mist lying over the roofs, thinning with height
       const fg = ctx.createLinearGradient(0, hzY - fl * 0.25, 0, h); fg.addColorStop(0, 'rgba(246,236,232,0)'); fg.addColorStop(0.35, 'rgba(246,236,232,.55)'); fg.addColorStop(1, 'rgba(246,236,232,.25)');
@@ -2490,20 +2521,26 @@
     const now = performance.now(), U = h * ((look && look.age) === 'kid' ? 0.72 : 1);
     let c = figCache.get(key);
     const lk = look ? (look.id || '') + '|' + (look.expr || '') + '|' + (look.kameez || '') + '|' + (look.skin ?? '') : '';
-    const must = !c || Math.abs(c.h - h) > h * 0.25 || c.lk !== lk;   // first paint, or a big change: now
+    // first paint or a new look: now. A size change (the camera zooming in on a pecha changes EVERY figure's size at
+    // once) used to force all of them to re-paint in the same frame - a freeze; now the old sprite is stretched to the
+    // new size and the re-paints are spread over the next frames by the budget below
+    const must = !c || c.lk !== lk;
+    everyMs *= h < 22 ? 4 : h < 45 ? 2 : 1;   // v7.1: a figure a few pixels tall doesn't need 10 fresh paints a second
     const stale = must || ((now - c.t > everyMs || Math.abs(c.h - h) > h * 0.06 || c.mode !== pose.mode) && (prio || figBudget.n > 0));
     if (stale) {
+      if (KF_DEBUG) { window.__figPaint = (window.__figPaint || 0) + 1; if (must) window.__figMust = (window.__figMust || 0) + 1; }
       if (!must && !prio) figBudget.n--;   // at most a few re-paints per frame, so they never all land on the same frame
       if (!c) { c = { cv: document.createElement('canvas') }; figCache.set(key, c); }
-      const sc = DPR, w = Math.ceil(U * 2.6), top = Math.ceil(U * 1.85), bot = Math.ceil(U * 0.3), ox = w / 2;
+      const sc = Math.min(DPR, h > 120 ? 1.5 : 2), w = Math.ceil(U * 2.6), top = Math.ceil(U * 1.85), bot = Math.ceil(U * 0.3), ox = w / 2;
       const pw = Math.ceil(w * sc), ph = Math.ceil((top + bot) * sc);
       if (c.cv.width < pw || c.cv.height < ph || c.cv.width > pw * 2) { c.cv.width = pw; c.cv.height = ph; }
       const g = c.cv.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, c.cv.width, c.cv.height); g.setTransform(sc, 0, 0, sc, 0, 0);
       const out = Fliers.draw(g, ox, top, h, look, pose);
       Object.assign(c, { t: now - (c.t ? 0 : Math.random() * everyMs), h, mode: pose.mode, lk, ox, top, w: c.cv.width / sc, hh: c.cv.height / sc, hand: out && out.hand ? [out.hand[0] - ox, out.hand[1] - top] : null });
     }
-    ctx.drawImage(c.cv, x - c.ox, y - c.top, c.w, c.hh);
-    return c.hand ? { hand: [x + c.hand[0], y + c.hand[1]] } : null;
+    const k = h / c.h;   // 1 unless the sprite is waiting for its re-paint at a new size
+    ctx.drawImage(c.cv, x - c.ox * k, y - c.top * k, c.w * k, c.hh * k);
+    return c.hand ? { hand: [x + c.hand[0] * k, y + c.hand[1] * k] } : null;
   }
   const spoolBmp = new Map();   // the reel pictures are SVGs: decoded to a bitmap once instead of re-rasterised every frame
   function spoolBitmap(im) { let b = spoolBmp.get(im); if (b === undefined && im.complete && im.naturalWidth) { b = document.createElement('canvas'); b.width = 96; b.height = Math.round(96 * im.naturalHeight / im.naturalWidth); b.getContext('2d').drawImage(im, 0, 0, b.width, b.height); spoolBmp.set(im, b); } return b || null; }
@@ -2525,7 +2562,7 @@
       const pose = { face: faceYaw - viewYaw, aim, t: G.t + p.slot * 0.7, mode, tug, lineColor: k ? k.thread.color : '#fff', haulPh: live && k.pullE > 0.05 ? k.haulPh : null, haul: live ? k.haul : 0 };
       // your own flier (big, right in front of you) is drawn live every frame; everyone else as a sprite
       // (your own flier too, but re-painted ~25 times a second and never held back by the per-frame budget)
-      handOut = drawFig('p' + p.slot + (curViewer && curViewer.lootcam ? 'L' : ''), base.x, base.y, hgt, look, pose, isViewer ? (QUAL.low ? 55 : 38) : (QUAL.low ? 160 : 90), isViewer);
+      handOut = drawFig('p' + p.slot + (curViewer && curViewer.lootcam ? 'L' : ''), base.x, base.y, hgt, look, pose, isViewer ? (QUAL.low ? 66 : 45) : (QUAL.low ? 160 : 100), isViewer);
     }
     ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.6)';
     const isHuman = p.ctrl.startsWith('human'); ctx.font = `bold ${Math.round(clamp(hgt * 0.12, 10, 18))}px sans-serif`;
@@ -2631,7 +2668,7 @@
     const s = project(cam, k.p); if (!s) return null;
     const { px, py } = kiteSize(cam, k, s);
     const lean = k.free ? 0 : (k.lean || 0), tk = k.tunkaT || 0, swing = tk * 0.45 * Math.sin((1 - tk) * 15) * (k.tunkaDir || 1);
-    const rot = k.bodyAngle + lean * 0.14 + swing;
+    const rot = k.bodyAngle + lean * 0.14 + swing + kiteAtt(k).rot;
     // THE KNOT IS ON THE DOR. Walk the dor's own screen path back from the kite until it is a kanni's length away
     // from the kite's centre: that point is the knot, so the line always ends exactly where the two kanni strings
     // meet (it used to aim at the flier in a straight line and add a sideways offset, so the dor bent into the knot
@@ -2654,6 +2691,100 @@
     k._gm = { cam, gm };
     return gm;
   }
+  /* ---------------- v7.1: the kite as a real, bowed paper sail ----------------
+   * Up to v7.0 every kite was one flat picture: rotated, squashed a little for its tilt, and nothing else - while the
+   * physics was already working out a full 3D attitude (bank `roll`, pitch) that was never shown. A real patang is a
+   * paper sail on a bent bamboo bow (kaman): the wings sweep back, it banks into a turn, rocks in the gusts, and the
+   * trailing corners of the paper flutter. The picture is now cut into a small grid and each cell is placed in 3D:
+   *   - bow: the wings bend back (more under load: fast flight, khainch), with a little quiver
+   *   - bank (physics roll + into the turn) and pitch (tilt), with an under-damped spring so it rocks and settles
+   *   - flutter: a travelling wave on the wing tips and tail corners
+   *   - shade: cells turned away from you are drawn a touch darker, which is what makes the curve read as a curve
+   * Everything here is drawing only: the flight model, the server and the pecha rules are untouched.
+   * Pictures are drawn from small pre-scaled copies (mipmaps): sharper (no shimmer when a 512 px picture is squeezed into
+   * 30 px) and cheaper for the phone. */
+  let frameNo = 0, mipBudget = 2;
+  function kiteMip(im, need) {   // need = device pixels across the drawn kite
+    const W0 = im.naturalWidth || im.width, H0 = im.naturalHeight || im.height; if (!W0 || !H0) return null;
+    let m = im._mips; if (!m || m.w !== W0) m = im._mips = { w: W0, lv: {}, dk: {} };
+    let target = 32; while (target < need * 1.2 && target < 512) target *= 2;
+    if (target >= Math.max(W0, H0)) return im;
+    if (m.lv[target]) return m.lv[target];
+    if (mipBudget <= 0) { for (const t of [target * 2, target * 4, target / 2]) if (m.lv[t]) return m.lv[t]; return im; }   // made over the next frames, never all at once
+    mipBudget--;
+    const sc = target / Math.max(W0, H0), tw = Math.max(1, Math.round(W0 * sc)), th = Math.max(1, Math.round(H0 * sc));
+    let src = im, sw = W0, sh = H0;
+    while (sw / 2 >= tw * 1.01) {   // halve step by step: a clean downscale, no aliasing
+      const nw = Math.round(sw / 2), nh = Math.round(sh / 2), t = document.createElement('canvas'); t.width = nw; t.height = nh;
+      const g = t.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(src, 0, 0, nw, nh); src = t; sw = nw; sh = nh; }
+    const c = document.createElement('canvas'); c.width = tw; c.height = th; const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(src, 0, 0, tw, th);
+    return (m.lv[target] = c);
+  }
+  function kiteShadeOf(src) {   // the same picture in shadow (only where the paper is - alpha kept), for the turned-away cells
+    if (src._dark) return src._dark;
+    const w = src.naturalWidth || src.width, h = src.naturalHeight || src.height; if (!w) return null;
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
+    g.drawImage(src, 0, 0); g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(10,8,20,.62)'; g.fillRect(0, 0, w, h);
+    return (src._dark = c);
+  }
+  // the sail's attitude for drawing: physics bank/pitch + a springy rock, per kite, advanced on match time
+  function kiteAtt(k) {
+    let a = k._att;
+    if (!a) a = k._att = { r: k.roll || 0, rv: 0, p: 0, pv: 0, z: 0, zv: 0, gt: G.t, tk: 0, flT: Math.random() * 9, roll: 0, pitch: 0, rot: 0, bow: 0.12, flA: 0.02 };
+    const dt = clamp(G.t - a.gt, 0, 0.05); a.gt = G.t;
+    if (dt <= 0) return a;
+    const t = k.t || G.t, ph = k.swayPh || 0, free = !!k.free, send = free ? 0 : (k.sendE || 0), pull = free ? 0 : (k.pullE || 0);
+    const v = k.v || [0, 0, 0], spd = Math.hypot(v[0], v[1], v[2]);
+    const load = free ? 0.12 : clamp(spd / 12, 0, 1) * 0.6 + clamp(pull, 0, 1) * 0.4;
+    const loose = free ? 1 : clamp(0.35 + send * 0.9 - pull * 0.3, 0, 1.2);   // a slack line lets the sail rock more
+    const n1 = 0.55 * Math.sin(2.1 * t + ph) + 0.3 * Math.sin(3.7 * t + 2.3 * ph) + 0.15 * Math.sin(6.3 * t + 0.7 * ph);
+    const n2 = 0.6 * Math.sin(1.7 * t + 1.9 * ph) + 0.4 * Math.sin(4.3 * t + 0.4 * ph);
+    const turnBank = clamp(-(k.headingVel || 0) * 0.075, -0.55, 0.55);
+    const rT = (free ? 0 : (k.roll || 0)) * 0.9 + turnBank + n1 * (0.1 + 0.22 * loose);
+    const tk = k.tunkaT || 0; if (tk > a.tk + 0.2) { a.rv += (k.tunkaDir || 1) * 5; a.pv -= 3; } a.tk = tk;   // a jhatka snaps the sail
+    a.rv += (70 * (rT - a.r) - 7 * a.rv) * dt; a.r = clamp(a.r + a.rv * dt, -1.25, 1.25);   // ~1.3 Hz, lightly damped
+    const pT = n2 * 0.07 * (0.4 + loose) + pull * 0.08 - send * 0.05;
+    a.pv += (90 * (pT - a.p) - 9 * a.pv) * dt; a.p += a.pv * dt;
+    a.zv += (60 * (n2 * 0.09 * loose - a.z) - 8 * a.zv) * dt; a.z += a.zv * dt;   // a small rock in the picture plane
+    a.flT += dt * (9 + 6 * load);
+    // turning on its own (idle ghoomna or dheel), the sail tips back and rocks onto its edge, as in the reference video
+    const spinV = free ? 0 : clamp(Math.max(k.idleE || 0, k.spinE || 0), 0, 1);
+    a.roll = a.r + spinV * 0.32 * Math.sin(t * 2.3 + ph); a.pitch = (k.incl || 0) + a.p + spinV * 0.22; a.rot = clamp(a.z, -0.13, 0.13);
+    a.bow = free ? 0.08 : 0.15 + 0.12 * load + 0.02 * Math.sin(8.5 * t + ph) * load;
+    a.flA = 0.022 + 0.04 * load + (free ? 0.02 : 0);
+    return a;
+  }
+  /* draw the picture as a bowed sail. W,H: drawn size; x0,y0: its top-left in the kite's own (rotated) frame;
+   * cx,cy: the point it turns about; devPx: device pixels across it (decides mip level and grid size).
+   * Returns the projection (u,v in 0..1 -> [x,y]) so the kanni strings can be tied to the same sail. */
+  function drawSail(im, W, H, x0, y0, cx, cy, att, devPx) {
+    const src = kiteMip(im, devPx) || im, SW = src.naturalWidth || src.width, SH = src.naturalHeight || src.height;
+    const cols = devPx < 28 ? 1 : devPx < 64 ? 4 : devPx < 130 ? 6 : 8, rows = devPx < 28 ? 1 : devPx < 100 ? 2 : 3;
+    const cp = Math.cos(att.pitch), sp = Math.sin(att.pitch), cr = Math.cos(att.roll), sr = Math.sin(att.roll), f = Math.max(W, H) * 3.2;
+    const bow = cols > 1 ? att.bow * W : 0, flA = cols > 1 ? att.flA * W : 0, flT = att.flT;
+    const P = (u, v) => {
+      const uu = u * 2 - 1, X = x0 + u * W - cx, Y = y0 + v * H - cy, au = Math.abs(uu);
+      const Z = bow * uu * uu * (1 - 0.45 * v) + flA * Math.sin(flT + uu * 2.4 + v * 3.1) * au * au * Math.sqrt(au) * (0.35 + 0.65 * v);
+      const y1 = Y * cp - Z * sp, z1 = Y * sp + Z * cp, x2 = X * cr + z1 * sr, z2 = -X * sr + z1 * cr, q = f / Math.max(f * 0.35, f + z2);
+      return [cx + x2 * q, cy + y1 * q];
+    };
+    const n = cols + 1, pts = new Array(n * (rows + 1));
+    for (let j = 0; j <= rows; j++) for (let i = 0; i <= cols; i++) pts[j * n + i] = P(i / cols, j / rows);
+    const B = ctx.getTransform(), sw = SW / cols, sh = SH / rows, cw = W / cols, dark = cols > 1 && !QUAL.low ? kiteShadeOf(src) : null;
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+      const p00 = pts[j * n + i], p10 = pts[j * n + i + 1], p01 = pts[(j + 1) * n + i];
+      const sx = i * sw, sy = j * sh, ow = i < cols - 1 ? Math.min(1, SW - sx - sw) : 0, oh = j < rows - 1 ? Math.min(1, SH - sy - sh) : 0;   // 1 px overlap: no seams
+      const a = (p10[0] - p00[0]) / sw, b = (p10[1] - p00[1]) / sw, c = (p01[0] - p00[0]) / sh, d = (p01[1] - p00[1]) / sh, e = p00[0], ff = p00[1];
+      ctx.setTransform(B.a * a + B.c * b, B.b * a + B.d * b, B.a * c + B.c * d, B.b * c + B.d * d, B.a * e + B.c * ff + B.e, B.b * e + B.d * ff + B.f);
+      ctx.drawImage(src, sx, sy, sw + ow, sh + oh, 0, 0, sw + ow, sh + oh);
+      if (dark) {   // turned away from you (squeezed across) -> a little darker
+        const sq = Math.hypot(p10[0] - p00[0], p10[1] - p00[1]) / cw, shade = clamp((0.97 - sq) * 1.1, 0, 0.42);
+        if (shade > 0.03) { const ga = ctx.globalAlpha; ctx.globalAlpha = ga * shade; ctx.drawImage(dark, sx, sy, sw + ow, sh + oh, 0, 0, sw + ow, sh + oh); ctx.globalAlpha = ga; }
+      }
+    }
+    ctx.setTransform(B);
+    return P;
+  }
   function drawKite(cam, k, isOwn, alpha = 1, dt = 0) {
     const s = project(cam, k.p); if (!s) return;
     // VIS exaggerates the kite so a 40 cm patang is readable 60 m away. Far kites keep roughly that size, but the
@@ -2663,7 +2794,7 @@
     const lean = k.free ? 0 : (k.lean || 0);
     // a kite on an off-centre kanni hangs tilted toward that wing; a tunka gives a quick pendulum swing that settles
     const tk = k.tunkaT || 0, swing = tk * 0.45 * Math.sin((1 - tk) * 15) * (k.tunkaDir || 1);
-    const rot = k.bodyAngle + lean * 0.14 + swing;
+    const att = kiteAtt(k), rot = k.bodyAngle + lean * 0.14 + swing + att.rot;
     const pivotX = lean * 0.07 * px, pivotY = -clamp(k.kanni * 3.2, -0.4, 0.4) * py;
 
     // (Basant night used to put a glowing halo and chasing LED points on every patang - removed: kites fly plain at night)
@@ -2672,10 +2803,11 @@
     ctx.translate(s.x, s.y);
     ctx.rotate(rot);
     ctx.save();
-    if (k.incl > 0.01) ctx.scale(1, Math.cos(k.incl));
+    let sailP = null; const sx0 = -px * flap / 2 - pivotX, sy0 = -py / 2 - pivotY;
     if (im.complete && im.naturalWidth) {
-      ctx.drawImage(im, -px * flap / 2 - pivotX, -py / 2 - pivotY, px * flap, py);
+      sailP = drawSail(im, px * flap, py, sx0, sy0, -pivotX, -pivotY, att, Math.max(px, py) * DPR);
     } else {
+      if (k.incl > 0.01) ctx.scale(1, Math.cos(k.incl));
       ctx.fillStyle = (k.owner && k.owner.color) || '#e8dcc0';
       ctx.beginPath();
       ctx.moveTo(-pivotX, -py / 2 - pivotY);
@@ -2692,7 +2824,10 @@
       // so the two strings show as a clear "V" from the kite down to the line (it used to be drawn flat on the sail
       // and was lost against the paper). Knot up/down (KANNI_PRESETS) and left/right (KANNI_BALANCE) move it.
       const ba = BRIDLE[(k.entry && k.entry.arche) || k.spec.id] || BRIDLE.patang;
-      const spineX = -pivotX, topY = ba[0] * py - pivotY, botY = ba[1] * py - pivotY;
+      let spineX = -pivotX, topY = ba[0] * py - pivotY, botY = ba[1] * py - pivotY;
+      if (sailP) {   // tie the strings onto the bent, tilted sail itself
+        const uS = (spineX - sx0) / (px * flap), t = sailP(uS, (topY - sy0) / py), b = sailP(uS, (botY - sy0) / py);
+        spineX = (t[0] + b[0]) / 2; topY = t[1]; botY = b[1]; }
       const gm = kiteGeom(cam, k); if (!gm) { ctx.restore(); return; } const kx = gm.kx, ky = gm.ky;
       const thr = clamp(px * 0.012, 0.9, 1.6);
       // the two strings hang as shallow curves bowing away from each other, so they read as a loop meeting at the
@@ -2845,22 +2980,35 @@
   // the shared 2-player camera looks at both kites from between both fliers
   const sharedView = { shared: true, slot: 0 };
   let curViewer = null;
+  /* v7.1: a slack dor hangs in a real curve. The physics line (used for crossings and cuts) keeps only a gentle belly; on
+   * screen a line with slack in it droops further, deepest a third of the way up from the flier's hand (the line's own
+   * weight), and straightens out as soon as it is pulled tight. Drawing only. */
+  function lineVis(k) {
+    const pts = k.linePoints(24), a = k.anchor, b = k.p;
+    const dist = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) || 1, slack = Math.max(0, k.lineLen - dist);
+    const extra = Math.min(dist * 0.085, Math.sqrt(dist * slack) * 0.16) * clamp(1 - (k.pullE || 0), 0, 1);
+    k._droop = (k._droop || 0) + (extra - (k._droop || 0)) * 0.12;   // eases in and out, never snaps
+    const dr = k._droop; if (dr < 0.05) return pts;
+    for (let i = 1; i < pts.length - 1; i++) { const s = i / (pts.length - 1), w = 6.75 * s * (1 - s) * (1 - s); pts[i][2] -= dr * w; }
+    return pts;
+  }
   function drawViewport(vp, viewer, dt) {
     curViewer = viewer;
     const { x, y, w, h } = vp, W0 = w, H0 = h; ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip(); ctx.translate(x, y);
-    const cam = camFor(viewer, w, h, dt); viewer.lastCam = cam; viewer.lastVp = { w, h }; drawWorld(cam, w, h);
+    const SK = (KF_DEBUG && window.__skip) || {};
+    const cam = camFor(viewer, w, h, dt); viewer.lastCam = cam; viewer.lastVp = { w, h }; if (!SK.world) drawWorld(cam, w, h); else { ctx.fillStyle = '#6ab'; ctx.fillRect(0, 0, w, h); }
     const mine = p => viewer.shared ? G.viewers.includes(p) : p === viewer;
     const items = [];
     for (const p of G.players) {
       const own = mine(p), hm = homeOf(p), dc = Math.hypot(hm[0] - cam.pos[0], hm[1] - cam.pos[1]);
       viewer._hands = viewer._hands || new Map();
-      if (hm[2] > 0.2) items.push({ d: -1e6 + dc + 0.5, f: () => drawRoof(cam, hm) });
-      items.push({ d: -1e6 + dc, f: () => { const h = drawPerson(cam, p, own); if (h) viewer._hands.set(p, h); else viewer._hands.delete(p); } });
+      if (hm[2] > 0.2 && !SK.figs) items.push({ d: -1e6 + dc + 0.5, f: () => drawRoof(cam, hm) });
+      if (!SK.figs) items.push({ d: -1e6 + dc, f: () => { const h = drawPerson(cam, p, own); if (h) viewer._hands.set(p, h); else viewer._hands.delete(p); } });
       const k = p.kite; if (!k || k.inDrifters) continue;   // a cut kite is drawn once, from the drifters list
       if (!k.free) {
         // in a pecha the line is drawn hooked: bent through the crossing, so you see which line is on top
         const pd = k._pechaDraw && k._pechaDraw[0];
-        const pts = pd ? (k._pechaDraw.length > 1 ? PECHA.bentLineMulti(k, k._pechaDraw) : PECHA.bentLine(k, pd.point, pd.s, pd.above)) : k.linePoints(24);
+        const pts = pd ? (k._pechaDraw.length > 1 ? PECHA.bentLineMulti(k, k._pechaDraw) : PECHA.bentLine(k, pd.point, pd.s, pd.above)) : lineVis(k);
         // one dor, from the flier's own hand to the kanni knot (it used to start at the flier's chest while the hands
         // held a second short stretch of line - which read as two dors)
         const hand = viewer._hands && viewer._hands.get(p), gm = kiteGeom(cam, k, pts), knot = gm && gm.px > 6 && gm.cut >= 0 ? { ...gm.knot, i: gm.cut } : null;
@@ -2873,7 +3021,7 @@
           polyline(cam, pts, k.hot > 0 ? '#ff5a5a' : k.thread.color, lw, inMine ? 1 : own ? 0.95 : 0.75, hand, knot); } });
       }
       if (k.trail) items.push({ d: k.p[0] + 1, f: () => polyline(cam, k.trail.p, k.thread.color, 1.2, 0.85) });
-      items.push({ d: k.p[0], f: () => drawKite(cam, k, own, 1, dt) });
+      if (!SK.kites) items.push({ d: k.p[0], f: () => drawKite(cam, k, own, 1, dt) });
     }
     for (const d of G.drifters) {
       const fade = d.landed ? clamp(1 - (d.groundT - 4) / 2, 0, 1) : 1;
@@ -2881,11 +3029,11 @@
       if (d.caught && d.caught.hook) items.push({ d: d.p[0] + 0.5, f: () => drawWrap(cam, d) });
       items.push({ d: d.p[0], f: () => drawKite(cam, d, false, fade, dt) });
     }
-    for (const P of PARTY) { const dc = Math.hypot(P.home[0] - cam.pos[0], P.home[1] - cam.pos[1]); items.push({ d: -1e6 + dc + 0.5, f: () => drawRoof(cam, P.home) }); items.push({ d: -1e6 + dc, f: () => drawParty(cam, P) }); }
+    if (!SK.figs) for (const P of PARTY) { const dc = Math.hypot(P.home[0] - cam.pos[0], P.home[1] - cam.pos[1]); items.push({ d: -1e6 + dc + 0.5, f: () => drawRoof(cam, P.home) }); items.push({ d: -1e6 + dc, f: () => drawParty(cam, P) }); }
     for (const L of G.looters) items.push({ d: -1e6 + Math.hypot(L.p[0] - cam.pos[0], L.p[1] - cam.pos[1]) + 0.2, f: () => drawLooter(cam, L) });
     for (const r of G.ropes) items.push({ d: 0, f: () => polyline(cam, r.rope.p, r.color, 1.2, Math.min(1, r.life / 3) * 0.85) });
     drawWorldLife(cam);
-    items.sort((a, b) => b.d - a.d).forEach(i => i.f());
+    (SK.items ? [] : items).sort((a, b) => b.d - a.d).forEach(i => i.f());
     for (const s of G.sparks) { const q = project(cam, s.p); if (q) { ctx.fillStyle = s.c || '#ffe066'; ctx.globalAlpha = clamp(s.t / (s.t0 || 0.25), 0, 1); ctx.beginPath(); ctx.arc(q.x, q.y, 1.5 + 4 * (s.big ? 2.2 : 1), 0, 7); ctx.fill(); ctx.globalAlpha = 1; } }
     for (const f of G.fx) {
       const q = project(cam, f.p); if (!q) continue;
@@ -2945,14 +3093,14 @@
     ctx.restore();
   }
   function render(dt) {
-    figBudget.n = QUAL.low ? 2 : 3;
+    figBudget.n = 2; frameNo++; mipBudget = 2;
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);   // draw in CSS pixels on a full-resolution canvas (sharp on phones / HiDPI)
-    const W = CW, H = CH; ctx.clearRect(0, 0, W, H);
+    const W = CW, H = CH;   // (no clear: every viewport paints its own sky edge to edge)
     const v = G.viewers;
     if (v.length === 1) drawViewport({ x: 0, y: 0, w: W, h: H }, v[0], dt);
     else if (G.layout === 'shared') drawViewport({ x: 0, y: 0, w: W, h: H }, sharedView, dt);
     else { drawViewport({ x: 0, y: 0, w: W / 2 - 2, h: H }, v[0], dt); drawViewport({ x: W / 2 + 2, y: 0, w: W / 2 - 2, h: H }, v[1], dt); ctx.fillStyle = '#0b0f19'; ctx.fillRect(W / 2 - 2, 0, 4, H); }
-    drawLootPip(W, H, dt);
+    if (!(KF_DEBUG && window.__skip && window.__skip.pip)) drawLootPip(W, H, dt);
     ctx.save(); ctx.scale(UI, UI);
     { const W = CW / UI, H = CH / UI;
       drawWindGauge(v.length > 1 && G.layout !== 'shared' ? W / 2 : W, v.length > 1 && G.layout === 'shared' ? sharedView : v[0]);
@@ -2963,11 +3111,14 @@
     { const vk0 = v[0] && v[0].kite, pd0 = vk0 && !vk0.free && vk0._pechaDraw && vk0._pechaDraw[0], tc = $('#touch');
       const st = pd0 ? (pd0.share <= 0.45 ? 'pecha losing' : 'pecha') : '';
       if (tc && tc.dataset.st !== st) { tc.dataset.st = st; tc.classList.toggle('pecha', !!pd0); tc.classList.toggle('losing', !!pd0 && pd0.share <= 0.45); } }
+    if (IS_TOUCH && (frameNo % 4) === 0 && !ZS.drag) zsSync(false);
+    if ((frameNo % 10) === 1 || !htmlCache['#score']) {   // v7.1: rebuilt 6 times a second, not every frame
     const rows = [...G.players].sort((a, b) => (G.teams ? teamOf(a) - teamOf(b) : 0) || pointsOf(b) - pointsOf(a) || a.score.lost - b.score.lost);
     const teamHd = G.teams ? (() => { const T = teamTotals(), nm = G.teamNames || ['Team A', 'Team B'];
       return `<div class="team-bar"><span class="t0"><b>${T[0].cut}</b>${esc(nm[0])}</span><em>cuts</em><span class="t1">${esc(nm[1])}<b>${T[1].cut}</b></span></div>`; })() : '';
     setHTML('#score', '<div class="hd">' + $('#modeLabel').textContent + ' - ' + G.sc.name + '</div>' + teamHd + '<table><tr><th>Player</th><th>Cut</th><th>Kites</th><th>Lost</th><th>Pts</th></tr>' +
       rows.map(p => `<tr class="${p.ctrl.startsWith('human') ? 'me' : ''} ${G.teams ? 'tr' + teamOf(p) : ''}"><td><i style="background:${p.color}"></i>${esc(p.name)}</td><td>${p.score.cut}</td><td>${p.score.caught}</td><td>${p.score.lost}</td><td><b>${pointsOf(p)}</b></td></tr>`).join('') + '</table>');
+    }
     const tm = $('#timer');
     if (G.teams && !G.tut) { const T = teamTotals(), nm = G.teamNames || ['A', 'B'], me = teamOf(G.viewers[0]), th = 1 - me; tm.textContent = `${G.cutTarget ? 'First to ' + G.cutTarget + ' · ' : G.duration ? Math.floor(Math.ceil(G.timeLeft) / 60) + ':' + String(Math.ceil(G.timeLeft) % 60).padStart(2, '0') + ' · ' : ''}${nm[me]} ${T[me].cut} – ${T[th].cut} ${nm[th]}`; tm.classList.toggle('low', !!G.cutTarget && Math.max(T[0].cut, T[1].cut) >= G.cutTarget - 1); tm.classList.remove('hidden'); }
     else if (G.cutTarget && !G.tut) { const lead = Math.max(0, ...G.players.map(p => p.score.cut)), me = G.viewers.map(v => v.score.cut).join(' / '); tm.textContent = `First to ${G.cutTarget} \u00b7 you ${me} \u00b7 best ${lead}`; tm.classList.toggle('low', lead >= G.cutTarget - 1); tm.classList.remove('hidden'); }
@@ -3033,10 +3184,14 @@
     qualityTick(raw);
     if (G) {
       const t0 = KF_DEBUG ? performance.now() : 0; let n = 0;
-      if (!G.paused) { G.acc += dt; while (G && G.acc >= DT) { snapPrev(); step(); n++; if (G) G.acc -= DT; } }
+      // v7.1: after one slow frame the loop used to run up to 12 physics steps at once to catch up - which made the NEXT
+      // frame slow too, and the game stuttered in a chain ("stuck" in a busy pecha). Offline it now catches up at most
+      // 4 steps (33 ms) a frame and lets the rest go: a hitch becomes a tiny slow-down instead of a freeze.
+      // Online the clock must keep up with the server, so it still catches up fully.
+      if (!G.paused) { G.acc += dt; const cap = G.online ? 12 : 4; while (G && G.acc >= DT && n < cap) { snapPrev(); step(); n++; if (G) G.acc -= DT; } if (G && !G.online && G.acc > DT) G.acc = DT * 0.999; }
       const t1 = KF_DEBUG ? performance.now() : 0;
       if (G) { if (G.replay) renderReplay(dt); else { const sw = G.paused ? null : lerpIn(G.acc / DT); try { render(dt); } finally { if (sw) lerpOut(sw); } } }
-      if (KF_DEBUG) { const P2 = window.__perf = window.__perf || { step: 0, render: 0, frames: 0, steps: 0 }; P2.step += t1 - t0; P2.render += performance.now() - t1; P2.frames++; P2.steps += n; }
+      if (KF_DEBUG) { const P2 = window.__perf = window.__perf || { step: 0, render: 0, frames: 0, steps: 0 }; P2.step += t1 - t0; P2.render += performance.now() - t1; P2.frames++; P2.steps += n; const t2 = performance.now(); if (raw > 60) (window.__long = window.__long || []).push({ raw: Math.round(raw), step: +(t1 - t0).toFixed(1), render: +(t2 - t1).toFixed(1), n, figs: window.__figPaint || 0, must: window.__figMust || 0, resized: window.__resized || 0 }); window.__figPaint = window.__figMust = window.__resized = 0; }
     }
     else { SFX.menuTick(); SFX.partyUpdate([], false); coverTick(now); }   // music keeps playing on the menus; the roofs fall quiet
     requestAnimationFrame(loop);
@@ -3053,28 +3208,32 @@
    * phones the game dropped to ~12 fps. The canvas now starts at a phone-friendly resolution and an adaptive quality
    * controller (QUAL) lowers it further, and switches off the heaviest glow effects, if frames still come in slow;
    * it raises it again when there is headroom. */
-  const QUAL = { scale: IS_TOUCH ? 1.5 : 2, max: IS_TOUCH ? 1.5 : 2, min: 0.75, low: false, avg: 16, slowT: 0, fastT: 0, cool: 0 };
+  /* v7.1: the controller dropped a 3x phone all the way to 0.75 - below one canvas pixel per screen point - which is the
+   * "graphics too low" blur (names, lines and kites smeared). It now starts sharp (2x), only gives up resolution after a
+   * sustained slow patch, never goes below 1x (one canvas pixel per screen point, never the blurry 0.75x), and gives sharpness back on phones
+   * too. The frame time itself came down a lot (the loop, figures and kite mipmaps), so it rarely needs to. */
+  const QUAL = { scale: 2, max: 2, min: 1, low: false, avg: 16, slowT: 0, fastT: 0, cool: 0 };
   function resize() {
     const dev = devicePixelRatio || 1;
     DPR = Math.max(Math.min(QUAL.min, dev), Math.min(QUAL.scale, dev));
     CW = innerWidth; CH = innerHeight; UI = clamp(Math.min(CW / 1100, CH / 680), 0.6, 1); measureSafe();
     const tl = document.getElementById('topLeft'), r = tl && tl.getBoundingClientRect(); HUD_TOP = r && r.bottom > 0 ? r.bottom + 8 : 64;
     const w = Math.round(CW * DPR), h = Math.round(CH * DPR);
-    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; if (KF_DEBUG) window.__resized = 1; }
   }
   function qualityTick(ms) {   // called once per rendered frame with the real frame time
     if (!G || G.paused || document.hidden || QUAL.fixed) return;
     QUAL.avg += (Math.min(ms, 120) - QUAL.avg) * 0.08; QUAL.cool -= ms;
     if (QUAL.cool > 0) return;
-    if (QUAL.avg > 21) { QUAL.slowT += ms; QUAL.fastT = 0; } else if (QUAL.avg < 14) { QUAL.fastT += ms; QUAL.slowT = 0; } else { QUAL.slowT = QUAL.fastT = 0; }
-    if (QUAL.slowT > 900) {   // too slow: first drop the glows, then the resolution
-      QUAL.slowT = 0; QUAL.cool = 1200;
+    if (QUAL.avg > 24) { QUAL.slowT += ms; QUAL.fastT = 0; } else if (QUAL.avg < 17.5) { QUAL.fastT += ms; QUAL.slowT = 0; } else { QUAL.slowT = QUAL.fastT = 0; }
+    if (QUAL.slowT > 1600) {   // too slow for a while: first drop the glows, then a little resolution
+      QUAL.slowT = 0; QUAL.cool = 2500;
       if (!QUAL.low) QUAL.low = true;
       else if (QUAL.scale > QUAL.min) { QUAL.scale = Math.max(QUAL.min, +(QUAL.scale - 0.25).toFixed(2)); resize(); }
-    } else if (QUAL.fastT > 5000) {   // lots of headroom: give the sharpness back
-      QUAL.fastT = 0; QUAL.cool = 2000;
+    } else if (QUAL.fastT > 4000) {   // headroom: give the sharpness back first, then the glows
+      QUAL.fastT = 0; QUAL.cool = 2500;
       if (QUAL.scale < QUAL.max) { QUAL.scale = Math.min(QUAL.max, QUAL.scale + 0.25); resize(); }
-      else if (QUAL.low && !IS_TOUCH) QUAL.low = false;
+      else if (QUAL.low) QUAL.low = false;
     }
   }
   // switching tabs or minimising pauses the match (it used to keep flying, and fighting, unseen)
@@ -3606,10 +3765,36 @@
   $('#pauseBtn').onclick = () => pauseOpen() ? closePauseMenu() : openPauseMenu();
   $('#botPlus').onclick = () => G && addBot(); $('#botMinus').onclick = () => G && removeBot();
   $('#zoomIn').onclick = () => G && zoomAll(1.15);
-  // phones/tablets (v6.5): a +/- pill on the right edge, and two-finger pinch on the sky (button controls; with swipe
-  // controls a second finger is the tunka, so the pill does the zooming there)
-  $('#tzIn').onclick = () => { if (G) { zoomAll(1.18); SFX.ui(); } };
-  $('#tzOut').onclick = () => { if (G) { zoomAll(1 / 1.18); SFX.ui(); } };
+  /* phones/tablets (v7.1): a zoom SLIDER on the left edge - drag the handle up to zoom in, down to zoom out; + and -
+   * at its ends step it; two-finger pinch on the sky still works (button controls - with swipe controls a second
+   * finger is the tunka, so the slider does the zooming there). The handle follows the zoom however it was changed. */
+  const ZS = { el: $('#zoomSlider'), track: $('#zsTrack'), thumb: $('#zsThumb'), fill: $('#zsFill'), drag: null, shown: -1 };
+  const zoomFrac = z => clamp(Math.log(z / ZOOM_MIN) / Math.log(ZOOM_MAX / ZOOM_MIN), 0, 1);
+  const zoomAt = f => ZOOM_MIN * Math.pow(ZOOM_MAX / ZOOM_MIN, clamp(f, 0, 1));
+  function zoomTo(z) { if (!G) return; const v0 = G.viewers[0], c0 = v0 && v0.cam; const cur = c0 ? c0.zoom : 1; if (cur > 0) zoomAll(z / cur); }
+  function zsSync(force) {   // put the handle where the zoom is (cheap: only when it moved)
+    if (!ZS.el || !G) return; const c = G.viewers[0] && G.viewers[0].cam; if (!c) return;
+    const f = zoomFrac(c.zoom); if (!force && Math.abs(f - ZS.shown) < 0.002) return; ZS.shown = f;
+    const H = ZS.track.clientHeight || 1; ZS.thumb.style.transform = `translateY(${((1 - f) * H).toFixed(1)}px)`; ZS.fill.style.height = (f * 100).toFixed(1) + '%';
+    ZS.el.setAttribute('aria-valuenow', Math.round(f * 100));
+  }
+  if (ZS.el) {
+    ZS.track.addEventListener('pointerdown', e => {
+      if (!G) return; e.preventDefault(); e.stopPropagation(); try { ZS.track.setPointerCapture(e.pointerId); } catch (x) {}
+      const c = G.viewers[0] && G.viewers[0].cam, f0 = c ? zoomFrac(c.zoom) : 0.5, r = ZS.track.getBoundingClientRect(), thumbY = r.top + (1 - f0) * r.height;
+      // grabbed the handle: drag it from where it is. Touched the track elsewhere: the handle jumps there, then drags
+      const onThumb = Math.abs(e.clientY - thumbY) < 30;
+      ZS.drag = { id: e.pointerId, y0: e.clientY, f0: onThumb ? f0 : clamp(1 - (e.clientY - r.top) / r.height, 0, 1), h: r.height };
+      if (!onThumb) { zoomTo(zoomAt(ZS.drag.f0)); zsSync(true); }
+      ZS.el.classList.add('drag'); if (saved.vibrate !== false && navigator.vibrate) try { navigator.vibrate(6); } catch (x) {}
+    });
+    ZS.track.addEventListener('pointermove', e => { const d = ZS.drag; if (!d || e.pointerId !== d.id) return; e.preventDefault(); zoomTo(zoomAt(d.f0 + (d.y0 - e.clientY) / d.h)); zsSync(true); });
+    const end = e => { if (ZS.drag && e.pointerId === ZS.drag.id) { ZS.drag = null; ZS.el.classList.remove('drag'); } };
+    ZS.track.addEventListener('pointerup', end); ZS.track.addEventListener('pointercancel', end);
+    for (const id of ['#tzIn', '#tzOut']) $(id).addEventListener('pointerdown', e => e.stopPropagation());
+  }
+  $('#tzIn').onclick = () => { if (G) { zoomAll(1.18); zsSync(true); SFX.ui(); } };
+  $('#tzOut').onclick = () => { if (G) { zoomAll(1 / 1.18); zsSync(true); SFX.ui(); } };
   { let pd = 0; const dist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
     canvas.addEventListener('touchstart', e => { if (e.touches.length === 2 && saved.touchMode !== 'swipe') { pd = dist(e.touches); e.preventDefault(); } }, { passive: false });
     canvas.addEventListener('touchmove', e => { if (pd && e.touches.length === 2 && G) { const d = dist(e.touches); if (d > 0) { zoomAll(clamp(d / pd, 0.8, 1.25)); pd = d; } e.preventDefault(); } }, { passive: false });
@@ -3730,11 +3915,11 @@
     renderPrefs(); applyTouchMode(); applyTheme();
   }
   function applyGfx() {
-    const g = saved.gfx || 'auto', top = IS_TOUCH ? 1.5 : 2;
+    const g = saved.gfx || 'auto', top = 2;
     QUAL.fixed = g !== 'auto';
-    if (g === 'saver') { QUAL.max = QUAL.scale = 1; QUAL.low = true; }
+    if (g === 'saver') { QUAL.max = QUAL.scale = 1; QUAL.min = 1; QUAL.low = true; }
     else if (g === 'high') { QUAL.max = QUAL.scale = top; QUAL.low = false; }
-    else { QUAL.max = top; QUAL.scale = Math.min(QUAL.scale, top); QUAL.low = false; }
+    else { QUAL.max = top; QUAL.min = 1; QUAL.scale = Math.max(QUAL.min, Math.min(QUAL.scale, top)); QUAL.low = false; }
     resize();
   }
   $('#setBtnMenu').onclick = () => openSettings();
@@ -3775,6 +3960,7 @@
     const T = [['music', 'Music', () => saved.music, v => { saved.music = v; SFX.setMusic(v); }], ['sound', 'Sound effects', () => saved.sound, v => { saved.sound = v; SFX.setEnabled(v); }],
       ['vibrate', 'Vibration', () => saved.vibrate !== false, v => { saved.vibrate = v; if (v) buzz(30); }], ['kiteSound', 'Kite sound', () => saved.kiteSound, v => { saved.kiteSound = v; SFX.setKiteSound(v); }],
       ['replay', 'Cut replays', () => saved.replay, v => { saved.replay = v; }], ['party', 'Roof music', () => saved.party, v => { saved.party = v; }],
+      ['idleSpin', 'Kite turns when left alone', () => saved.idleSpin !== false, v => { saved.idleSpin = v; }],
       ['lootcam', 'Loot window', () => saved.lootcam !== 'off', v => { saved.lootcam = v ? 'small' : 'off'; }],
       ['saver', 'Battery saver', () => saved.gfx === 'saver', v => { saved.gfx = v ? 'saver' : 'auto'; applyGfx(); }], ['swipe', 'Swipe controls', () => saved.touchMode === 'swipe', v => { saved.touchMode = v ? 'swipe' : 'buttons'; applyTouchMode(); }]];
     const box = $('#quickToggles'); if (!box) return;
@@ -3848,17 +4034,43 @@
     if (!list.length) ready();
     setTimeout(ready, 6000);   // never keep anyone waiting on a slow picture
     let isReady = false;
-    function ready() { if (isReady) return; isReady = true; $('#splashBar').style.width = '100%'; $('#splashTxt').textContent = 'Hawa theek hai — the wind is right.'; $('#splashGo').disabled = false; }
+    function ready() { if (isReady) return; isReady = true; try { if (menuFirst()) showMenu(); } catch (e) {} $('#splashBar').style.width = '100%'; $('#splashTxt').textContent = 'Hawa theek hai — the wind is right.'; $('#splashGo').disabled = false; }
     try { SFX.init(); } catch (e) {}   // if this browser already allows sound here, the music starts right away
+    /* v7.1 SMOOTH HAND-OVER. The tap used to do everything in the same instant: ask for full screen + landscape (the
+     * page changes size, often portrait -> landscape), build the home screen, start fading the splash, and pop the
+     * daily-login card 0.7 s later - so the home screen re-laid itself out and jumped WHILE it faded in ("jerking").
+     * Now: the home screen is built under the splash while the kites load (pictures decoded, layout done); the tap
+     * asks for full screen and the splash waits, still covering everything, until the size has stopped changing;
+     * then ONE clean crossfade; the login card comes after the fade has finished. */
+    const menuFirst = () => !(NET.online && (ON.want || !saved.netName));
+    let going = false;
     const go = () => {
-      if (!isReady) return;
-      SFX.init(); SFX.setMusic(saved.music); SFX.ui(); goLandscape();
-      el.classList.add('out');
-      if (NET.online && (ON.want || !saved.netName)) { if (!saved.netName) showNameScreen(ON.want ? showOnline : showMenu); else showOnline(); }
-      else showMenu();
-      setTimeout(() => el.classList.add('hidden'), 520);
-      if (!NET.online || NET.ready) setTimeout(() => { if (!G && loginNow().can && !$('#menu').classList.contains('hidden') && saved.tutDone) openLogin('login'); }, 700);
+      if (!isReady || going) return; going = true;
+      SFX.init(); SFX.setMusic(saved.music); SFX.ui();
       removeEventListener('keydown', onKey);
+      $('#splashGo').classList.add('going');
+      const needFs = IS_TOUCH && !(document.fullscreenElement && screen.orientation && /^landscape/.test(screen.orientation.type));
+      goLandscape();
+      let last = performance.now(), t0 = last, done = false;
+      const onRs = () => { last = performance.now(); };
+      addEventListener('resize', onRs);
+      const reveal = () => {
+        if (done) return; done = true; removeEventListener('resize', onRs);
+        if (!menuFirst()) { if (!saved.netName) showNameScreen(ON.want ? showOnline : showMenu); else showOnline(); }
+        else showMenu();   // already built under the splash: this only refreshes it at its final size
+        requestAnimationFrame(() => requestAnimationFrame(() => {   // let that frame land, then fade
+          el.classList.add('out');
+          setTimeout(() => { el.classList.add('hidden'); el.querySelector('#splashSky').innerHTML = '';   // its floating kites stop costing anything
+            if (!NET.online || NET.ready) setTimeout(() => { if (!G && loginNow().can && !$('#menu').classList.contains('hidden') && saved.tutDone) openLogin('login'); }, 250);
+          }, 480);
+        }));
+      };
+      if (!needFs) reveal();
+      else { const wait = () => { const now = performance.now(); if (done) return; if ((now - last > 160 && now - t0 > 120) || now - t0 > 900) reveal(); else requestAnimationFrame(wait); }; requestAnimationFrame(wait); }
+      if (saved.retiredRefund || saved.retiredNote) {   // v7.1: tell them once what happened to a retired kite
+        const c = saved.retiredRefund | 0; delete saved.retiredRefund; delete saved.retiredNote; save();
+        setTimeout(() => toast(c > 0 ? `Some kite types were retired from the game. You got <b>${c} coins</b> back for the ones you had bought.` : 'Some kite types were retired from the game - your kite was swapped for a starter kite.'), 1200);
+      }
     };
     const onKey = e => { if (e.key === 'Enter' || e.key === ' ') go(); };
     $('#splashGo').onclick = go; el.onclick = e => { if (e.target === el || e.target.closest('.splash-inner')) go(); };
@@ -3888,5 +4100,5 @@
   requestAnimationFrame(loop);
   // test/debug hook: development only. The production build defines KF_DEBUG = false and this is stripped out, so
   // nobody can reach into a running match from the browser console.
-  if (KF_DEBUG) window.__game = { openSelect: m => openSelect(m), finishMatch: () => finishMatch(), tutState: () => G && G.tut, advance: sec => { for (let i = 0; i < sec / DT; i++) step(); }, kiteScreen: () => { const v = G && G.viewers[0]; if (!v || !v.kite || !v.lastCam) return null; const q = project(v.lastCam, v.kite.p); return q ? { x: q.x / v.lastVp.w, y: q.y / v.lastVp.h } : { x: -9, y: -9 }; }, get G() { return G; }, startMatch, matchCfg: x => (ensureLoadout(false), matchCfg(x)), CAT, SCENES, CHARACTERS, SPOOLS, debugCut: (i, j) => { const k = G.players[i].kite; k.releaseLine('cut'); onCut(k, G.players[j].kite, false, 0.6, k.p.slice()); } };
+  if (KF_DEBUG) window.__game = { qual: (sc, low) => { QUAL.fixed = sc != null; if (sc != null) { QUAL.scale = sc; QUAL.low = !!low; resize(); } return { ...QUAL }; }, openSelect: m => openSelect(m), finishMatch: () => finishMatch(), tutState: () => G && G.tut, advance: sec => { for (let i = 0; i < sec / DT; i++) step(); }, kiteScreen: () => { const v = G && G.viewers[0]; if (!v || !v.kite || !v.lastCam) return null; const q = project(v.lastCam, v.kite.p); return q ? { x: q.x / v.lastVp.w, y: q.y / v.lastVp.h } : { x: -9, y: -9 }; }, get G() { return G; }, startMatch, matchCfg: x => (ensureLoadout(false), matchCfg(x)), CAT, SCENES, CHARACTERS, SPOOLS, debugCut: (i, j) => { const k = G.players[i].kite; k.releaseLine('cut'); onCut(k, G.players[j].kite, false, 0.6, k.p.slice()); } };
 })();

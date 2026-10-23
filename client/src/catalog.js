@@ -8,13 +8,6 @@ window.KITE_CATALOG = [
   "scale": 1
  },
  {
-  "id": "png:aag-tota",
-  "name": "Aag Tota",
-  "src": "assets/kites/parinda/aag-tota.png",
-  "arche": "bird",
-  "scale": 1
- },
- {
   "id": "png:aatish",
   "name": "Aatish",
   "src": "assets/kites/patang/aatish.png",
@@ -134,13 +127,6 @@ window.KITE_CATALOG = [
   "scale": 1
  },
  {
-  "id": "png:chhe-kona-tara",
-  "name": "Chhe Kona Tara",
-  "src": "assets/kites/sitara/chhe-kona-tara.png",
-  "arche": "rokkaku",
-  "scale": 1
- },
- {
   "id": "png:chhota-kaghaz",
   "name": "Chhota Kaghaz",
   "src": "assets/kites/patang/chhota-kaghaz.png",
@@ -159,13 +145,6 @@ window.KITE_CATALOG = [
   "name": "Dev",
   "src": "assets/kites/patang/dev.png",
   "arche": "patang",
-  "scale": 1
- },
- {
-  "id": "png:dhaari-chamgadar",
-  "name": "Dhaari Chamgadar",
-  "src": "assets/kites/parinda/dhaari-chamgadar.png",
-  "arche": "bird",
   "scale": 1
  },
  {
@@ -208,13 +187,6 @@ window.KITE_CATALOG = [
   "name": "Firozi Phool",
   "src": "assets/kites/patang/firozi-phool.png",
   "arche": "patang",
-  "scale": 1
- },
- {
-  "id": "png:firozi-resham",
-  "name": "Firozi Resham",
-  "src": "assets/kites/parinda/firozi-resham.png",
-  "arche": "bird",
   "scale": 1
  },
  {
@@ -302,13 +274,6 @@ window.KITE_CATALOG = [
   "scale": 1
  },
  {
-  "id": "png:gulabi-resham",
-  "name": "Gulabi Resham",
-  "src": "assets/kites/parinda/gulabi-resham.png",
-  "arche": "bird",
-  "scale": 1
- },
- {
   "id": "png:gulabi-sufi",
   "name": "Gulabi Sufi",
   "src": "assets/kites/patang/gulabi-sufi.png",
@@ -365,13 +330,6 @@ window.KITE_CATALOG = [
   "scale": 1
  },
  {
-  "id": "png:hara-tota",
-  "name": "Hara Tota",
-  "src": "assets/kites/parinda/hara-tota.png",
-  "arche": "bird",
-  "scale": 1
- },
- {
   "id": "png:hari-kiran",
   "name": "Hari Kiran",
   "src": "assets/kites/patang/hari-kiran.png",
@@ -414,13 +372,6 @@ window.KITE_CATALOG = [
   "scale": 1
  },
  {
-  "id": "png:jaali-resham",
-  "name": "Jaali Resham",
-  "src": "assets/kites/parinda/jaali-resham.png",
-  "arche": "bird",
-  "scale": 1
- },
- {
   "id": "png:jadugarni",
   "name": "Jadugarni",
   "src": "assets/kites/patang/jadugarni.png",
@@ -449,24 +400,10 @@ window.KITE_CATALOG = [
   "scale": 1
  },
  {
-  "id": "png:jhalar",
-  "name": "Jhalar",
-  "src": "assets/kites/parinda/jhalar.png",
-  "arche": "bird",
-  "scale": 1
- },
- {
   "id": "png:jinn",
   "name": "Jinn",
   "src": "assets/kites/patang/jinn.png",
   "arche": "patang",
-  "scale": 1
- },
- {
-  "id": "png:kala-dabba",
-  "name": "Kala Dabba",
-  "src": "assets/kites/dabba/kala-dabba.png",
-  "arche": "eddy",
   "scale": 1
  },
  {
@@ -673,13 +610,6 @@ window.KITE_CATALOG = [
   "scale": 1
  },
  {
-  "id": "png:lal-shikra",
-  "name": "Lal Shikra",
-  "src": "assets/kites/parinda/lal-shikra.png",
-  "arche": "bird",
-  "scale": 1
- },
- {
   "id": "png:machhli",
   "name": "Machhli",
   "src": "assets/kites/patang/machhli.png",
@@ -862,13 +792,6 @@ window.KITE_CATALOG = [
   "scale": 1
  },
  {
-  "id": "png:parda-dabba",
-  "name": "Parda Dabba",
-  "src": "assets/kites/dabba/parda-dabba.png",
-  "arche": "eddy",
-  "scale": 1
- },
- {
   "id": "png:peela-jamni",
   "name": "Peela Jamni",
   "src": "assets/kites/patang/peela-jamni.png",
@@ -876,59 +799,10 @@ window.KITE_CATALOG = [
   "scale": 1
  },
  {
-  "id": "png:peela-tara",
-  "name": "Peela Tara",
-  "src": "assets/kites/sitara/peela-tara.png",
-  "arche": "rokkaku",
-  "scale": 1
- },
- {
   "id": "png:peela-teer",
   "name": "Peela Teer",
   "src": "assets/kites/patang/peela-teer.png",
   "arche": "patang",
-  "scale": 1
- },
- {
-  "id": "png:pipa-chaand",
-  "name": "Pipa Chaand",
-  "src": "assets/kites/pipa/pipa-chaand.png",
-  "arche": "pipa",
-  "scale": 1
- },
- {
-  "id": "png:pipa-chaurasta",
-  "name": "Pipa Chaurasta",
-  "src": "assets/kites/pipa/pipa-chaurasta.png",
-  "arche": "pipa",
-  "scale": 1
- },
- {
-  "id": "png:pipa-dhaal",
-  "name": "Pipa Dhaal",
-  "src": "assets/kites/pipa/pipa-dhaal.png",
-  "arche": "pipa",
-  "scale": 1
- },
- {
-  "id": "png:pipa-gubbara",
-  "name": "Pipa Gubbara",
-  "src": "assets/kites/pipa/pipa-gubbara.png",
-  "arche": "pipa",
-  "scale": 1
- },
- {
-  "id": "png:pipa-jaali",
-  "name": "Pipa Jaali",
-  "src": "assets/kites/pipa/pipa-jaali.png",
-  "arche": "pipa",
-  "scale": 1
- },
- {
-  "id": "png:pipa-sunehri",
-  "name": "Pipa Sunehri",
-  "src": "assets/kites/pipa/pipa-sunehri.png",
-  "arche": "pipa",
   "scale": 1
  },
  {
@@ -943,48 +817,6 @@ window.KITE_CATALOG = [
   "name": "Qabile ka Sardar",
   "src": "assets/kites/patang/qabile-ka-sardar.png",
   "arche": "patang",
-  "scale": 1
- },
- {
-  "id": "png:raia-bartanvi",
-  "name": "Raia Bartanvi",
-  "src": "assets/kites/raia/raia-bartanvi.png",
-  "arche": "delta",
-  "scale": 1
- },
- {
-  "id": "png:raia-chakra",
-  "name": "Raia Chakra",
-  "src": "assets/kites/raia/raia-chakra.png",
-  "arche": "delta",
-  "scale": 1
- },
- {
-  "id": "png:raia-mozaik",
-  "name": "Raia Mozaik",
-  "src": "assets/kites/raia/raia-mozaik.png",
-  "arche": "delta",
-  "scale": 1
- },
- {
-  "id": "png:raia-rangeen",
-  "name": "Raia Rangeen",
-  "src": "assets/kites/raia/raia-rangeen.png",
-  "arche": "delta",
-  "scale": 1
- },
- {
-  "id": "png:raia-sitara",
-  "name": "Raia Sitara",
-  "src": "assets/kites/raia/raia-sitara.png",
-  "arche": "delta",
-  "scale": 1
- },
- {
-  "id": "png:rang-birangi-chamgadar",
-  "name": "Rang Birangi Chamgadar",
-  "src": "assets/kites/parinda/rang-birangi-chamgadar.png",
-  "arche": "bird",
   "scale": 1
  },
  {
@@ -1027,13 +859,6 @@ window.KITE_CATALOG = [
   "name": "Sabz Teer",
   "src": "assets/kites/patang/sabz-teer.png",
   "arche": "patang",
-  "scale": 1
- },
- {
-  "id": "png:safed-chamgadar",
-  "name": "Safed Chamgadar",
-  "src": "assets/kites/parinda/safed-chamgadar.png",
-  "arche": "bird",
   "scale": 1
  },
  {
@@ -1086,20 +911,6 @@ window.KITE_CATALOG = [
   "scale": 1
  },
  {
-  "id": "png:shab-dabba",
-  "name": "Shab Dabba",
-  "src": "assets/kites/dabba/shab-dabba.png",
-  "arche": "eddy",
-  "scale": 1
- },
- {
-  "id": "png:shahi-tota",
-  "name": "Shahi Tota",
-  "src": "assets/kites/parinda/shahi-tota.png",
-  "arche": "bird",
-  "scale": 1
- },
- {
   "id": "png:shatranj",
   "name": "Shatranj",
   "src": "assets/kites/patang/shatranj.png",
@@ -1139,20 +950,6 @@ window.KITE_CATALOG = [
   "name": "Sitara Mandala",
   "src": "assets/kites/patang/sitara-mandala.png",
   "arche": "patang",
-  "scale": 1
- },
- {
-  "id": "png:sunehri-resham",
-  "name": "Sunehri Resham",
-  "src": "assets/kites/parinda/sunehri-resham.png",
-  "arche": "bird",
-  "scale": 1
- },
- {
-  "id": "png:sunehri-tara",
-  "name": "Sunehri Tara",
-  "src": "assets/kites/sitara/sunehri-tara.png",
-  "arche": "rokkaku",
   "scale": 1
  },
  {
@@ -1244,13 +1041,6 @@ window.KITE_CATALOG = [
   "name": "Tiranga",
   "src": "assets/kites/patang/tiranga.png",
   "arche": "patang",
-  "scale": 1
- },
- {
-  "id": "png:tota",
-  "name": "Tota",
-  "src": "assets/kites/parinda/tota.png",
-  "arche": "bird",
   "scale": 1
  },
  {
@@ -1433,27 +1223,6 @@ window.KITE_CATALOG = [
   "name": "Ulta Teer",
   "src": "assets/kites/patang/ulta-teer.png",
   "arche": "patang",
-  "scale": 1
- },
- {
-  "id": "png:wau-billi",
-  "name": "Wau Billi",
-  "src": "assets/kites/raia/wau-billi.png",
-  "arche": "delta",
-  "scale": 1
- },
- {
-  "id": "png:wau-chaand",
-  "name": "Wau Chaand",
-  "src": "assets/kites/raia/wau-chaand.png",
-  "arche": "delta",
-  "scale": 1
- },
- {
-  "id": "png:wau-neela",
-  "name": "Wau Neela",
-  "src": "assets/kites/raia/wau-neela.png",
-  "arche": "delta",
   "scale": 1
  }
 ];

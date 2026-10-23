@@ -1,0 +1,121 @@
+/* Bo Kata! website - global tokens and base styles.
+ * The page is a Basant afternoon: deep sky at the top, pale sky for reading, marigold from the logo, pink manjha for
+ * lines and links, aubergine ink, plaster-coloured rooftops. Baloo 2 for display, Mukta for reading. */
+:root {
+  --sky: #2f6fd0;
+  --sky-deep: #1c4fa6;
+  --sky-pale: #eef4fd;
+  --sky-mist: #dbe8fa;
+  --genda: #ffd23f;          /* marigold - the logo's yellow */
+  --genda-deep: #f2a900;
+  --manjha: #ff3d7f;         /* glass-coated kite string */
+  --manjha-ink: #c8155a;     /* manjha dark enough for text on pale sky */
+  --jamun: #2a0f1c;          /* ink */
+  --jamun-soft: #5b4150;
+  --plaster: #d9c7a6;
+  --plaster-dark: #b39d7a;
+  --white: #ffffff;
+
+  --page-bg: var(--sky-pale);
+  --text: var(--jamun);
+  --text-soft: var(--jamun-soft);
+  --surface: #ffffff;
+  --surface-line: #cfdcf0;
+  --link: var(--manjha-ink);
+
+  --display: 'Baloo 2', 'Mukta', system-ui, sans-serif;
+  --body: 'Mukta', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* type scale (major third, 1.25) */
+  --t-xs: 0.8rem;
+  --t-sm: 0.9rem;
+  --t-md: 1.0625rem;
+  --t-lg: 1.33rem;
+  --t-xl: 1.66rem;
+  --t-2xl: clamp(1.9rem, 1.2rem + 2.6vw, 2.6rem);
+  --t-3xl: clamp(2.4rem, 1.4rem + 4.4vw, 4rem);
+
+  --wrap: 1120px;
+  --gutter: clamp(16px, 4vw, 40px);
+  --radius-s: 8px;
+  --radius-m: 14px;
+  --radius-l: 22px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --page-bg: #0f1a33;
+    --text: #f4ecdf;
+    --text-soft: #c4b9c8;
+    --surface: #17264a;
+    --surface-line: #2a3d6a;
+    --link: #ff7aa6;
+    --sky-mist: #1a2b52;
+  }
+}
+:root[data-theme='dark'] {
+  --page-bg: #0f1a33;
+  --text: #f4ecdf;
+  --text-soft: #c4b9c8;
+  --surface: #17264a;
+  --surface-line: #2a3d6a;
+  --link: #ff7aa6;
+  --sky-mist: #1a2b52;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 80px; }
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--text);
+  font-family: var(--body);
+  font-size: var(--t-md);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+img { max-width: 100%; display: block; }
+a { color: var(--link); text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 2.5px; }
+h1, h2, h3, h4 { font-family: var(--display); line-height: 1.1; margin: 0 0 0.5em; font-weight: 800; letter-spacing: -0.01em; }
+h1 { font-size: var(--t-3xl); }
+h2 { font-size: var(--t-2xl); }
+h3 { font-size: var(--t-lg); font-weight: 700; }
+p { margin: 0 0 1em; max-width: 68ch; }
+code, kbd { font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; font-size: 0.88em; }
+kbd {
+  display: inline-block; min-width: 1.9em; padding: 0.05em 0.45em; text-align: center;
+  border: 1px solid var(--surface-line); border-bottom-width: 3px; border-radius: 6px; background: var(--surface);
+}
+:focus-visible { outline: 3px solid var(--manjha); outline-offset: 3px; border-radius: 4px; }
+::selection { background: var(--genda); color: var(--jamun); }
+
+.wrap { width: 100%; max-width: var(--wrap); margin: 0 auto; padding: 0 var(--gutter); }
+.section { padding: clamp(48px, 7vw, 96px) 0; }
+.lede { font-size: var(--t-lg); color: var(--text-soft); line-height: 1.5; max-width: 60ch; }
+.muted { color: var(--text-soft); }
+.page-head { padding: clamp(40px, 6vw, 72px) 0 clamp(16px, 3vw, 28px); }
+.page-head h1 { margin-bottom: 0.3em; }
+
+/* buttons: a marigold "Fly" button and a quiet outline one - the same two the game uses */
+.btn {
+  --b-bg: var(--genda); --b-fg: var(--jamun); --b-edge: var(--genda-deep);
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5em;
+  min-height: 48px; padding: 0.55em 1.35em; border-radius: 999px;
+  font-family: var(--display); font-weight: 800; font-size: var(--t-md); line-height: 1;
+  color: var(--b-fg); background: var(--b-bg); border: 0; box-shadow: 0 4px 0 var(--b-edge);
+  text-decoration: none; cursor: pointer; transition: transform 0.12s, box-shadow 0.12s;
+}
+.btn:hover { transform: translateY(-1px); box-shadow: 0 5px 0 var(--b-edge); }
+.btn:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--b-edge); }
+.btn-quiet { --b-bg: transparent; --b-fg: currentColor; --b-edge: transparent; box-shadow: inset 0 0 0 2px currentColor; }
+.btn-quiet:hover, .btn-quiet:active { box-shadow: inset 0 0 0 2px currentColor; }
+.btn[aria-disabled='true'] { opacity: 0.55; cursor: not-allowed; }
+.btn svg { width: 1.15em; height: 1.15em; }
+
+.visually-hidden { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

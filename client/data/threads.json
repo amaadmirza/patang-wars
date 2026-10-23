@@ -1,0 +1,116 @@
+[
+  {
+    "id": "cotton",
+    "name": "Plain Cotton",
+    "tier": "Beginner",
+    "color": "#e8dcc0",
+    "note": "Untreated cotton. Cannot cut, but tough and cheap. Good for practice.",
+    "dia": 0.0006,
+    "strength": 32,
+    "sharp": 0.05,
+    "ea": 900,
+    "mu": 0.00022,
+    "stats": {
+      "cut": 1,
+      "strength": 3,
+      "weight": 3
+    },
+    "spool": "charkhi",
+    "art": "assets/spools/cotton.svg"
+  },
+  {
+    "id": "manjha",
+    "name": "Glass Manjha",
+    "tier": "Standard",
+    "color": "#ff5ea8",
+    "note": "Cotton coated with glue and powdered glass. The traditional cutter: sharp but brittle.",
+    "dia": 0.0006,
+    "strength": 22,
+    "sharp": 0.7,
+    "ea": 800,
+    "mu": 0.00026,
+    "stats": {
+      "cut": 4,
+      "strength": 2,
+      "weight": 3
+    },
+    "spool": "firki",
+    "art": "assets/spools/manjha.svg"
+  },
+  {
+    "id": "cerol",
+    "name": "Cerol",
+    "tier": "Standard",
+    "color": "#f2d21b",
+    "note": "Brazilian ground-quartz coating. Even cut, moderate strength.",
+    "dia": 0.0007,
+    "strength": 26,
+    "sharp": 0.6,
+    "ea": 850,
+    "mu": 0.0003,
+    "stats": {
+      "cut": 3,
+      "strength": 3,
+      "weight": 3
+    },
+    "spool": "lata",
+    "art": "assets/spools/cerol.svg"
+  },
+  {
+    "id": "chilena",
+    "name": "Chilena",
+    "tier": "Advanced",
+    "color": "#3ad6c5",
+    "note": "Braided nylon with abrasive. Best balance of strength and bite.",
+    "dia": 0.0005,
+    "strength": 40,
+    "sharp": 0.65,
+    "ea": 1400,
+    "mu": 0.0002,
+    "stats": {
+      "cut": 4,
+      "strength": 4,
+      "weight": 2
+    },
+    "spool": "chilena",
+    "art": "assets/spools/chilena.svg"
+  },
+  {
+    "id": "nylon",
+    "name": "Smooth Nylon",
+    "tier": "Standard",
+    "color": "#5aa8ff",
+    "note": "Very strong and light, but almost no cutting power. Wins by not breaking.",
+    "dia": 0.0004,
+    "strength": 60,
+    "sharp": 0.15,
+    "ea": 1800,
+    "mu": 0.00012,
+    "stats": {
+      "cut": 1,
+      "strength": 5,
+      "weight": 1
+    },
+    "spool": "roca",
+    "art": "assets/spools/nylon.svg"
+  },
+  {
+    "id": "razor",
+    "name": "Razor Wire Manjha",
+    "tier": "Elite",
+    "color": "#9b6bff",
+    "note": "Extremely aggressive coat, fragile and heavy. Cuts anything, snaps if you pull hard.",
+    "dia": 0.0007,
+    "strength": 15,
+    "sharp": 1,
+    "ea": 700,
+    "mu": 0.0004,
+    "stats": {
+      "cut": 5,
+      "strength": 1,
+      "weight": 4
+    },
+    "spool": "paila",
+    "art": "assets/spools/razor.svg"
+  }
+]
