@@ -337,10 +337,17 @@
     });
     return (spriteCache[key] = c);
   }
+  /* v7: a canvas is painted only when it scrolls into view. The shop and kite lists hold 200+ kites; painting every
+   * workshop kite the moment the panel opened froze a phone for about a second ("the menu gets stuck"). */
+  let io = null;
+  const paintCanvas = (cv, e) => sprite(e).ready.then(s => { const g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height); g.drawImage(s, 0, 0, cv.width, cv.height); });
   function hydrate(rootEl, byId) {
+    if (!io && typeof IntersectionObserver !== 'undefined') io = new IntersectionObserver(list => list.forEach(en => {
+      if (!en.isIntersecting) return; const cv = en.target; io.unobserve(cv); const e = cv._kvEntry; cv._kvEntry = null; if (e) paintCanvas(cv, e);
+    }), { rootMargin: '160px' });
     rootEl.querySelectorAll('canvas[data-kv]').forEach(cv => {
       const e = byId(cv.dataset.kv); if (!e || !e.recipe) return;
-      sprite(e).ready.then(s => { const g = cv.getContext('2d'); g.clearRect(0, 0, cv.width, cv.height); g.drawImage(s, 0, 0, cv.width, cv.height); });
+      if (io) { cv._kvEntry = e; io.observe(cv); } else paintCanvas(cv, e);
     });
   }
 

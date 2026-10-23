@@ -1,8 +1,8 @@
 {
   "name": "patang-wars-app",
   "private": true,
-  "version": "1.6.5",
-  "description": "Patang Wars for Android and iPhone (Capacitor). The whole game runs inside the app, offline.",
+  "version": "1.7.0",
+  "description": "Bo Kata! for Android and iPhone (Capacitor). The whole game runs inside the app, offline.",
   "scripts": {
     "www": "node ../build.js --app",
     "assets": "capacitor-assets generate --iconBackgroundColor '#1e2350' --iconBackgroundColorDark '#1e2350' --splashBackgroundColor '#1e2350' --splashBackgroundColorDark '#1e2350'",

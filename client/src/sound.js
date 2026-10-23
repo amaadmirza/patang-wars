@@ -182,7 +182,7 @@
     const t = ctx.currentTime;
     crowd.g.gain.cancelScheduledValues(t); crowd.g.gain.setTargetAtTime(big ? 0.3 : 0.15, t, 0.08); crowd.g.gain.setTargetAtTime(0.03, t + 0.9, 0.9);
     crowd.f.frequency.setTargetAtTime(1100, t, 0.1); crowd.f.frequency.setTargetAtTime(750, t + 1, 0.8);
-    if (big) { tone(1900, 0.45, 'sine', 0.04, 2600, 0.15); tone(2300, 0.35, 'sine', 0.03, 1800, 0.55); }
+    if (big) { tone(1900, 0.45, 'sine', 0.022, 2600, 0.3); tone(2300, 0.35, 'sine', 0.016, 1800, 0.75); }
     crowdT = 3;
   }
   function lost() { tone(300, 0.5, 'sawtooth', 0.05, 110); }
@@ -233,7 +233,7 @@
   /** the best South Asian voice this device has for the chosen language, or null */
   function pickVoice() {
     if (!sysVoices.length) loadVoices();
-    const order = pref.voice === 'hi' ? [/^hi/i, /^ur/i, /^en[-_](IN|PK)/i] : [/^ur/i, /^hi/i, /^en[-_](IN|PK)/i];
+    const order = pref.voice === 'hi' ? [/^hi/i, /^ur/i] : [/^ur/i, /^hi/i];   // v7: never en-IN - it read "Bo kaata" as English words
     for (const re of order) {
       const c = sysVoices.filter(v => re.test(v.lang || ''));
       if (!c.length) continue;
@@ -244,82 +244,126 @@
     return null;
   }
   const langOf = v => /^ur/i.test(v.lang) ? 'ur' : /^hi/i.test(v.lang) ? 'hi' : 'roman';
+  /* v7: the phone app speaks through Android's own text-to-speech (Google's Urdu / Hindi voices), via the small native
+   * plugin the app build adds (app/scripts/patch-native.js). An Android WebView has no speechSynthesis, so before this
+   * the app always fell back to the built-in synth voice - which is what players heard as "distorted". */
+  const NT = { checked: false, ok: false, langs: {} };
+  function nativeTts() {
+    const C = root.Capacitor, P = C && C.Plugins && C.Plugins.BoKataVoice;
+    if (!P || !(C.isNativePlatform ? C.isNativePlatform() : true)) return null;
+    if (!NT.checked) { NT.checked = true; NT.ok = true;
+      try { P.languages().then(r => { NT.langs = r || {}; NT.ok = !!(NT.langs.ur || NT.langs.hi); }).catch(() => { NT.ok = false; }); } catch (e) { NT.ok = false; } }
+    return NT.ok ? P : null;
+  }
   /** what voice the shouts will use, for the settings screen */
-  function voiceInfo() { const v = pickVoice(); return v ? { name: v.name, lang: v.lang, builtIn: false } : { name: 'Built-in rooftop voice', lang: pref.voice, builtIn: true }; }
-  /** say one of the PH phrases: vol 0..1, pitch ~0.5..2, rate ~0.8..1.4 */
-  function say(key, vol = 1, pitch = 1.1, rate = 1.05, far = false) {
+  function voiceInfo() {
+    if (nativeTts() && (NT.langs.ur || NT.langs.hi)) { const l = pref.voice === 'hi' ? (NT.langs.hi ? 'hi' : 'ur') : (NT.langs.ur ? 'ur' : 'hi'); return { name: 'Phone voice (' + (l === 'ur' ? 'Urdu' : 'Hindi') + ')', lang: l, builtIn: false }; }
+    const v = pickVoice(); return v ? { name: v.name, lang: v.lang, builtIn: false } : { name: 'Built-in rooftop voice', lang: pref.voice, builtIn: true };
+  }
+  let speaking = -9;
+  /** say one of the PH phrases: vol 0..1, pitch ~0.5..2, rate ~0.8..1.4. far: a shout from another roof (quiet, built-in) */
+  function say(key, vol = 1, pitch = 1, rate = 1, far = false) {
     if (!ok() || pref.voice === 'off') return false;
-    const p = PH[key] || PH.bokata, v = pickVoice();
+    const p = PH[key] || PH.bokata;
+    // other roofs and the street kids: always the small built-in voice, quiet and far off. (They went through the
+    // phone's speech engine with chipmunk pitches, queued up behind each other and cut off your own shout.)
+    if (far) return fxSay(p.fx, vol, pitch, rate, true);
+    const now = ctx.currentTime; if (now - speaking < 0.9) return false; speaking = now;   // one shout at a time
+    const nt = nativeTts();
+    if (nt) {
+      const l = pref.voice === 'hi' ? (NT.langs.hi ? 'hi' : 'ur') : (NT.langs.ur ? 'ur' : 'hi');
+      // natural speed and pitch: changing them makes a recorded voice sound processed
+      try { nt.speak({ text: p[l], lang: l === 'ur' ? 'ur-PK' : 'hi-IN', rate: 1.0, pitch: 1.0, volume: Math.min(1, vol) }).catch(() => { NT.ok = false; fxSay(p.fx, vol, pitch, rate, false); }); return true; } catch (e) { NT.ok = false; }
+    }
+    const v = pickVoice();
     if (v && ss && root.SpeechSynthesisUtterance) {
       try {
         const u = new root.SpeechSynthesisUtterance(p[langOf(v)]);
-        u.voice = v; u.lang = v.lang; u.volume = Math.min(1, vol); u.pitch = pitch; u.rate = rate;
-        if (!far) ss.cancel();
+        u.voice = v; u.lang = v.lang; u.volume = Math.min(1, vol); u.pitch = 1; u.rate = 1;
+        if (ss.speaking || ss.pending) ss.cancel();
         ss.speak(u); return true;
       } catch (e) {}
     }
-    return fxSay(p.fx, vol * (far ? 0.5 : 1), pitch, rate, far);
+    return fxSay(p.fx, vol, pitch, rate, false);
   }
 
-  /* ---- the built-in voice: a little formant synthesizer for the handful of shouts above. A buzzy glottal pulse at a
-   * shouting pitch goes through three resonances (the vowel formants) that glide from sound to sound; stops are a short
-   * silence and a burst, h is breath. Two voices a few semitones apart, so it sounds like the next roof shouting. ---- */
-  const VOW = { a: [700, 1220, 2600, 0.1], aa: [800, 1180, 2550, 0.12], e: [480, 1900, 2600, 0.11], ii: [320, 2250, 2950, 0.12], oo: [480, 860, 2550, 0.13], u: [380, 900, 2400, 0.08], uu: [340, 800, 2350, 0.12] };
-  const CON = {   // [type, duration, F1, F2, F3, burst/noise centre]
-    b: ['stop', 0.06, 300, 900, 2300, 900, 1], p: ['stop', 0.08, 300, 900, 2300, 900, 0], t: ['stop', 0.07, 350, 1700, 2400, 3200, 0], d: ['stop', 0.06, 350, 1700, 2500, 3000, 1],
-    k: ['stop', 0.08, 300, 1900, 2400, 1900, 0], g: ['stop', 0.06, 300, 1900, 2400, 1800, 1], h: ['breath', 0.07], r: ['flap', 0.035, 450, 1350, 1800], l: ['glide', 0.06, 380, 1100, 2700],
+  /* ---- the built-in voice (v7, rebuilt): one shouting voice made the way a throat makes it. A glottal pulse (falling
+   * harmonics, a little jitter) goes through the three vowel resonances IN SERIES - like the throat, mouth and lips -
+   * instead of three separate band-pass filters added together. Stops are a short silence and a soft burst, h is breath.
+   * v6 used two such voices 3.5 semitones apart, plus narrow filters at triple gain: the two voices beat against each
+   * other and the result sounded buzzy and distorted. Now: one voice, gentle resonances, a limiter at the end. ---- */
+  const VOW = { a: [700, 1220, 2600, 0.1], aa: [780, 1180, 2550, 0.12], e: [480, 1900, 2600, 0.11], ii: [320, 2250, 2950, 0.12], oo: [470, 860, 2550, 0.13], u: [380, 900, 2400, 0.08], uu: [340, 800, 2350, 0.12] };
+  const CON = {   // [type, duration, F1, F2, F3, burst/noise centre, voiced]
+    b: ['stop', 0.05, 300, 900, 2300, 900, 1], p: ['stop', 0.07, 300, 900, 2300, 1000, 0], t: ['stop', 0.06, 350, 1700, 2500, 3200, 0], d: ['stop', 0.05, 350, 1700, 2500, 3000, 1],
+    k: ['stop', 0.07, 300, 1900, 2400, 1900, 0], g: ['stop', 0.05, 300, 1900, 2400, 1800, 1], h: ['breath', 0.07], r: ['flap', 0.035, 450, 1350, 1800], l: ['glide', 0.06, 380, 1100, 2700],
     m: ['nasal', 0.07, 280, 1000, 2300], n: ['nasal', 0.06, 280, 1600, 2500], ng: ['nasal', 0.09, 280, 1900, 2400], w: ['glide', 0.05, 340, 750, 2300], y: ['glide', 0.05, 300, 2200, 2900]
   };
-  let glottal = null;
+  let glottal = null, voiceOut = null;
+  function voiceBus() {   // a soft limiter just for voices, so a shout on top of the cheer never clips
+    if (voiceOut) return voiceOut;
+    const c = ctx.createDynamicsCompressor(); c.threshold.value = -14; c.knee.value = 8; c.ratio.value = 8; c.attack.value = 0.003; c.release.value = 0.15;
+    const g = ctx.createGain(); g.gain.value = 1; c.connect(g); g.connect(sfx);
+    return (voiceOut = c);
+  }
   function fxSay(seq, vol = 1, pitch = 1, rate = 1, far = false) {
     if (!ok()) return false;
-    if (!glottal) { const n = 40, re = new Float32Array(n), im = new Float32Array(n); for (let h = 1; h < n; h++) im[h] = Math.pow(h, -1.25) * (h % 2 ? 1 : 0.8); glottal = ctx.createPeriodicWave(re, im); }
+    if (!glottal) { const n = 48, re = new Float32Array(n), im = new Float32Array(n); for (let h = 1; h < n; h++) im[h] = Math.pow(h, -1.55); glottal = ctx.createPeriodicWave(re, im); }
     const ph = seq.split(' ').filter(Boolean), t0 = ctx.currentTime + 0.03, sp = 1 / Math.max(0.6, rate);
-    const out = ctx.createGain(); out.gain.value = 0.14 * vol * (far ? 0.6 : 1);
-    const hs = ctx.createBiquadFilter(); hs.type = 'lowpass'; hs.frequency.value = far ? 2200 : 4200; out.connect(hs); hs.connect(sfx);
-    for (const [vi, dp] of [[0, 0], [1, 3.5]]) {
-      const f0 = 175 * pitch * Math.pow(2, dp / 12), o = ctx.createOscillator(); o.setPeriodicWave(glottal);
-      const vib = ctx.createOscillator(), vg = ctx.createGain(); vib.frequency.value = 5.5 + vi; vg.gain.value = f0 * 0.012; vib.connect(vg); vg.connect(o.frequency);
-      const vgain = ctx.createGain(); vgain.gain.value = 0; o.connect(vgain);
-      const nz = ctx.createBufferSource(); nz.buffer = noiseBuf; nz.loop = true; const ngain = ctx.createGain(); ngain.gain.value = 0; nz.connect(ngain);
-      const F = [0, 1, 2].map(i => { const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = [5, 9, 12][i]; f.frequency.value = [700, 1200, 2600][i]; const g = ctx.createGain(); g.gain.value = [1, 0.55, 0.3][i] * 3; vgain.connect(f); ngain.connect(f); f.connect(g); g.connect(out); return f; });
-      const burst = ctx.createBiquadFilter(); burst.type = 'bandpass'; burst.Q.value = 1.5; const bg = ctx.createGain(); bg.gain.value = 0; nz.connect(burst); burst.connect(bg); bg.connect(out);
-      let t = t0 + vi * 0.015;
-      const cur = [700, 1200, 2600];   // where each formant is heading (the param's .value doesn't follow scheduled ramps)
-      const setF = (fs, at, glide) => fs.forEach((fq, i) => { F[i].frequency.setValueAtTime(cur[i], at); F[i].frequency.linearRampToValueAtTime(fq, at + glide); cur[i] = fq; });
-      const n = ph.length;
-      for (let i = 0; i < n; i++) {
-        const p = ph[i], last = i === n - 1;
-        if (VOW[p]) {
-          // stressed (doubled) vowels are long and high, the last one falls: the shape of a shout
-          const doubled = ph[i + 1] === p; if (doubled) i++;
-          const v = VOW[p], d = (doubled ? v[3] * 2.6 : v[3]) * sp * (last ? 1.6 : 1);
-          setF(v.slice(0, 3), t, 0.04);
-          o.frequency.setValueAtTime(f0 * (doubled ? 1.25 : 1.05), t); o.frequency.linearRampToValueAtTime(f0 * (last ? 0.78 : doubled ? 1.18 : 1.0), t + d);
-          vgain.gain.setTargetAtTime(doubled ? 1 : 0.8, t, 0.012); ngain.gain.setTargetAtTime(0.04, t, 0.02);
-          t += d;
-          if (last) { vgain.gain.setTargetAtTime(0, t - 0.06, 0.05); ngain.gain.setTargetAtTime(0, t - 0.06, 0.05); }
-          continue;
-        }
-        const c = CON[p]; if (!c) continue;
-        const d = c[1] * sp;
-        if (c[0] === 'stop') {
-          vgain.gain.setTargetAtTime(c[6] ? 0.12 : 0, t, 0.008); ngain.gain.setTargetAtTime(0, t, 0.008);
-          setF([c[2], c[3], c[4]], t, d * 0.8);
-          burst.frequency.setValueAtTime(c[5], t + d); bg.gain.setValueAtTime(0, t + d); bg.gain.linearRampToValueAtTime(c[6] ? 0.25 : 0.55, t + d + 0.004); bg.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.035);
-          if (!c[6]) { ngain.gain.setValueAtTime(0, t + d + 0.01); ngain.gain.linearRampToValueAtTime(0.25, t + d + 0.02); ngain.gain.linearRampToValueAtTime(0.03, t + d + 0.05); }
-          t += d + 0.015;
-        } else if (c[0] === 'breath') {
-          vgain.gain.setTargetAtTime(0.05, t, 0.01); ngain.gain.setTargetAtTime(0.45, t, 0.01); t += d;
-        } else {   // nasal / glide / flap: voiced, formants move, a little quieter
-          vgain.gain.setTargetAtTime(c[0] === 'nasal' ? 0.35 : c[0] === 'flap' ? 0.3 : 0.6, t, 0.01); ngain.gain.setTargetAtTime(0.02, t, 0.01);
-          setF([c[2], c[3], c[4]], t, d * 0.6); t += d;
-        }
+    // output: level, a high-pass (no rumble), a low-pass (far roofs are muffled), the limiter
+    const out = ctx.createGain(); out.gain.value = (far ? 0.045 : 0.085) * vol;
+    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 170; hp.Q.value = 0.5;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = far ? 1900 : 4600; lp.Q.value = 0.5;
+    out.connect(hp); hp.connect(lp);
+    let dest = lp;
+    if (far && ctx.createStereoPanner) { const pn = ctx.createStereoPanner(); pn.pan.value = Math.random() * 1.6 - 0.8; lp.connect(pn); dest = pn; }
+    dest.connect(voiceBus());
+    const f0 = (far ? 165 : 182) * pitch;
+    const o = ctx.createOscillator(); o.setPeriodicWave(glottal);
+    // natural wobble: a slow vibrato plus a faster small jitter
+    const vib = ctx.createOscillator(), vg = ctx.createGain(); vib.frequency.value = 5.2; vg.gain.value = f0 * 0.01; vib.connect(vg); vg.connect(o.frequency);
+    const jit = ctx.createOscillator(), jg = ctx.createGain(); jit.type = 'triangle'; jit.frequency.value = 13.7; jg.gain.value = f0 * 0.004; jit.connect(jg); jg.connect(o.frequency);
+    const vgain = ctx.createGain(); vgain.gain.value = 0; o.connect(vgain);
+    const nz = ctx.createBufferSource(); nz.buffer = noiseBuf; nz.loop = true; const ngain = ctx.createGain(); ngain.gain.value = 0; nz.connect(ngain);
+    // the vocal tract: three resonances in series
+    const F = [0, 1, 2].map(i => { const f = ctx.createBiquadFilter(); f.type = 'peaking'; f.frequency.value = [700, 1200, 2600][i]; f.gain.value = [14, 13, 10][i]; f.Q.value = [6, 8, 9][i]; return f; });
+    const tilt = ctx.createBiquadFilter(); tilt.type = 'lowpass'; tilt.frequency.value = 3200; tilt.Q.value = 0.4;
+    vgain.connect(tilt); ngain.connect(tilt); tilt.connect(F[0]); F[0].connect(F[1]); F[1].connect(F[2]); F[2].connect(out);
+    const burst = ctx.createBiquadFilter(); burst.type = 'bandpass'; burst.Q.value = 1.2; const bg = ctx.createGain(); bg.gain.value = 0; nz.connect(burst); burst.connect(bg); bg.connect(out);
+    let t = t0;
+    const cur = [700, 1200, 2600];   // where each formant is heading (the param's .value doesn't follow scheduled ramps)
+    const setF = (fs, at, glide) => fs.forEach((fq, i) => { F[i].frequency.setValueAtTime(cur[i], at); F[i].frequency.linearRampToValueAtTime(fq, at + glide); cur[i] = fq; });
+    const n = ph.length;
+    for (let i = 0; i < n; i++) {
+      const p = ph[i], last = i === n - 1;
+      if (VOW[p]) {
+        // stressed (doubled) vowels are long and high, the last one falls: the shape of a shout
+        const doubled = ph[i + 1] === p; if (doubled) i++;
+        const v = VOW[p], d = (doubled ? v[3] * 2.5 : v[3]) * sp * (last ? 1.5 : 1);
+        setF(v.slice(0, 3), t, 0.045);
+        o.frequency.setValueAtTime(f0 * (doubled ? 1.18 : 1.04), t); o.frequency.linearRampToValueAtTime(f0 * (last ? 0.8 : doubled ? 1.12 : 1.0), t + d);
+        vgain.gain.setTargetAtTime(doubled ? 1 : 0.82, t, 0.015); ngain.gain.setTargetAtTime(0.025, t, 0.02);   // a breath of air in every vowel
+        t += d;
+        if (last) { vgain.gain.setTargetAtTime(0, t - 0.07, 0.045); ngain.gain.setTargetAtTime(0, t - 0.07, 0.045); }
+        continue;
       }
-      const end = t + 0.15;
-      [o, vib, nz].forEach(x => { x.start(t0); x.stop(end); });
-      vgain.gain.setTargetAtTime(0, end - 0.1, 0.03);
+      const c = CON[p]; if (!c) continue;
+      const d = c[1] * sp;
+      if (c[0] === 'stop') {
+        vgain.gain.setTargetAtTime(c[6] ? 0.08 : 0, t, 0.01); ngain.gain.setTargetAtTime(0, t, 0.01);
+        setF([c[2], c[3], c[4]], t, d * 0.8);
+        burst.frequency.setValueAtTime(c[5], t + d); bg.gain.setValueAtTime(0, t + d); bg.gain.linearRampToValueAtTime(c[6] ? 0.08 : 0.16, t + d + 0.005); bg.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.03);
+        if (!c[6]) { ngain.gain.setValueAtTime(0, t + d + 0.012); ngain.gain.linearRampToValueAtTime(0.09, t + d + 0.022); ngain.gain.linearRampToValueAtTime(0.02, t + d + 0.05); }
+        t += d + 0.012;
+      } else if (c[0] === 'breath') {
+        vgain.gain.setTargetAtTime(0.04, t, 0.012); ngain.gain.setTargetAtTime(0.18, t, 0.012); t += d;
+      } else {   // nasal / glide / flap: voiced, formants move, a little quieter
+        vgain.gain.setTargetAtTime(c[0] === 'nasal' ? 0.4 : c[0] === 'flap' ? 0.45 : 0.65, t, 0.012); ngain.gain.setTargetAtTime(0.012, t, 0.01);
+        setF([c[2], c[3], c[4]], t, d * 0.6); t += d;
+      }
     }
+    const end = t + 0.15;
+    [o, vib, jit, nz].forEach(x => { x.start(t0); x.stop(end); });
+    vgain.gain.setTargetAtTime(0, end - 0.1, 0.03);
     return true;
   }
 
@@ -327,9 +371,9 @@
   function shout(kind = 'win') {
     if (!ok()) return;
     cheer(true);
-    if (kind === 'lost') say(['katgayi', 'bokata', 'oyehoye'][Math.floor(Math.random() * 3)], 0.9, 1.0, 1.05);
-    else if (kind === 'snap') say('urrgayi', 0.9, 1.0, 1.05);
-    else say(['bokata', 'bokata', 'bokatahai', 'wokata', 'wah'][Math.floor(Math.random() * 5)], 1, 1.12, 1.08);
+    if (kind === 'lost') say(['katgayi', 'bokata', 'oyehoye'][Math.floor(Math.random() * 3)], 0.9);
+    else if (kind === 'snap') say('urrgayi', 0.9);
+    else say(['bokata', 'bokata', 'bokatahai', 'wokata', 'wah'][Math.floor(Math.random() * 5)], 1);
   }
   /* ---------------- far-away voices: other rooftops shouting across the festival ---------------- */
   const FAR = ['bokata', 'bokatahai', 'kaata', 'wokata', 'bokata', 'oyehoye', 'urrgayi'];
@@ -337,11 +381,11 @@
   function far(force) {
     if (!ok()) return;
     const now = ctx.currentTime; if (!force && now - lastVoice < 4) return; lastVoice = now;
-    say(FAR[Math.floor(Math.random() * FAR.length)], 0.2 + Math.random() * 0.15, 0.8 + Math.random() * 0.5, 0.95 + Math.random() * 0.25, true);
+    say(FAR[Math.floor(Math.random() * FAR.length)], 0.35 + Math.random() * 0.25, 0.88 + Math.random() * 0.24, 0.95 + Math.random() * 0.15, true);
     crowd.g.gain.setTargetAtTime(0.08, now, 0.2); crowd.g.gain.setTargetAtTime(0.03, now + 0.8, 0.8);
   }
   /** street kids shouting as they chase a cut kite */
-  function kids() { if (!ok()) return; const K = ['pakro', 'lootlo', 'merihai', 'aayi', 'pakro']; say(K[Math.floor(Math.random() * K.length)], 0.3, 1.6 + Math.random() * 0.3, 1.2, true); }
+  function kids() { if (!ok()) return; const K = ['pakro', 'lootlo', 'merihai', 'aayi', 'pakro']; say(K[Math.floor(Math.random() * K.length)], 0.4, 1.3 + Math.random() * 0.15, 1.12, true); }
   function farTick(dt, running) { if (!running) return; farGap -= dt; if (farGap <= 0) { farGap = 10 + Math.random() * 18; far(); } }
 
   /* =====================================================================================================
@@ -718,7 +762,7 @@
   function menuTick() { if (ctx && pref.music && enabled) musicTick(); }
   const unlocked = () => !!ctx && ctx.state === 'running';
   /** a short taste of the shout, for the settings screen */
-  function testVoice() { init(); if (!ok()) return; say('bokata', 1, 1.12, 1.08); }
+  function testVoice() { init(); if (!ok()) return; speaking = -9; say('bokata', 1); }
 
   /* ---------------- rooftop parties: a DJ and a dhol player on two roofs across the street ----------------
    * Each has its own bus: a gain (how near the camera is), a low-pass (far away you hear the thump, not the detail) and

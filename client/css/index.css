@@ -1,4 +1,4 @@
-/* Patang Wars - Basant theme: deep dusk indigo, marigold accent, glass panels */
+/* Bo Kata! (was Patang Wars) - Basant theme: deep dusk indigo, marigold accent, glass panels */
 :root{
   --bg:#0e1424; --bg2:#151d33; --panel:rgba(20,28,48,.86); --panel-solid:#161f36; --line:rgba(var(--fg),.09); --line2:rgba(var(--fg),.16);
   --text:#eef1f8; --muted:#9aa5bd; --accent:#ffb627; --accent2:#ff7a45; --ok:#3ddc97; --bad:#ff5d73; --sky:#7bdff2;
@@ -979,7 +979,7 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
   .mode,.mode.primary{padding:7px 12px}
   .daily{padding:6px 10px}
 }
-/* v6.1: Patang Wars logo (one outlined SVG lockup: emblem, wordmark and tagline) */
+/* v6.1 logo (v7: Bo Kata!) (one outlined SVG lockup: emblem, wordmark and tagline) */
 .logo-h{margin:0;line-height:0}
 .logo-full{display:block;height:auto;filter:drop-shadow(0 10px 24px rgba(0,0,0,.35))}
 .splash-inner .logo-full{width:min(620px,86vw,110vh);margin:0 auto}
@@ -1293,3 +1293,119 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
 @media (max-height:430px) and (orientation:landscape){.pick-panel{padding:10px 12px 12px}.pk small{display:none}.pk-art{height:72px}}
 @media (orientation:portrait) and (max-width:560px){.pick-grid{grid-template-columns:1fr}.pk{flex-direction:row;text-align:left}.pk-art{width:110px;flex:none;height:64px}}
 @media (prefers-reduced-motion:reduce){.pk.on .pk-check{animation:none}}
+
+/* ======================================================================================================
+ * v7 (Bo Kata!) - phone & app polish
+ *  - safe areas from Capacitor's injected variables or the browser's env(), whichever is larger
+ *  - taps answer at once (no double-tap zoom wait), no grey tap flash
+ *  - phones/app: no live blur behind panels and HUD (the heaviest thing an Android WebView draws), no animated shadows
+ *  - panels centre with margin:auto, so a tall panel always scrolls from its top (never cut off and stuck)
+ *  - a real in-match menu (Resume / Settings / Controls / Quit)
+ *  - hub: labelled rail, settings gear in the top bar, room to breathe on short phones
+ * ====================================================================================================== */
+:root{--sa-t:max(var(--safe-area-inset-top,0px),env(safe-area-inset-top,0px));--sa-r:max(var(--safe-area-inset-right,0px),env(safe-area-inset-right,0px));
+  --sa-b:max(var(--safe-area-inset-bottom,0px),env(safe-area-inset-bottom,0px));--sa-l:max(var(--safe-area-inset-left,0px),env(safe-area-inset-left,0px))}
+button,label,select,input[type=checkbox],input[type=range],.it,.th,.pk,.sc,.ev-b,.rail-b,.stage-daily{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+img{-webkit-user-drag:none}
+@media (pointer:coarse){
+  .panel,.hud-bar,#score,#tut,#touch button,#zoomPill,.toast,#feed div,.mode,.wallet,.daily,.rank-card,.settings-card,.topbar{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  #game .hud-bar{background:rgba(12,18,32,.82)}#touch button{background:rgba(12,18,32,.7)}#tut{background:rgba(12,18,32,.95)}
+  .menu-sky img,.splash-sky img,.stage-art .sa-kite{filter:none!important}
+  .menu-sky img,.splash-sky img{will-change:transform}
+  .hub .rail-b svg.gi{filter:none}
+  .grid .it img,.grid .it canvas,.kinfo img,.kinfo canvas{filter:none!important}
+}
+/* nothing moves behind an open panel (saves battery, keeps the panel smooth) */
+body.covered #menu *,body.covered #menu{animation-play-state:paused!important}
+body.in-match #menu .menu-sky img{animation:none}
+
+/* panels: centred when they fit, scroll from the top when they don't */
+:is(#shop,#coll,#lb,#trophies,#how,#settings,#mohalla,#buyPop,#loginPop,#pickPop,#online,#nameScreen,#swap,#maker,#charMaker){justify-content:flex-start!important}
+:is(#shop,#coll,#lb,#trophies,#how,#settings,#mohalla,#buyPop,#loginPop,#pickPop,#online,#nameScreen,#swap,#maker,#charMaker)>.panel{margin-top:auto!important;margin-bottom:auto!important;flex:none}
+.screen{padding:max(10px,var(--sa-t)) max(10px,var(--sa-r)) max(10px,var(--sa-b)) max(10px,var(--sa-l))}
+.screen,.panel,.shop-grid,.coll-grid,#kiteGrid,.sidepane,.set-panes,.mh-ladder,.track-list,.tlist{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.no-touch{display:block}
+@media (pointer:coarse){.no-touch{display:none!important}}
+
+/* ---- the in-match menu ---- */
+#game #pause{position:absolute;inset:0;left:0;top:0;transform:none;padding:max(10px,var(--sa-t)) max(10px,var(--sa-r)) max(10px,var(--sa-b)) max(10px,var(--sa-l));
+  display:flex;align-items:center;justify-content:center;border:0;border-radius:0;background:rgba(8,10,28,.5);backdrop-filter:none;z-index:30;pointer-events:auto;overflow:auto}
+#game #pause.hidden{display:none!important}
+.pause-card{width:min(360px,88vw);margin:auto;display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:16px 18px 18px;border-radius:20px;text-align:center;color:#fff8ea;
+  background:linear-gradient(180deg,#2c3070,#1d2050);border:3px solid #fff1c4;box-shadow:0 6px 0 #0c0e2a,0 20px 50px rgba(0,0,0,.45)}
+#pause .pause-card b{display:block;font-size:28px;font-weight:900;font-style:italic;letter-spacing:-.01em;line-height:1.1}
+#pause .pause-sub{display:block;margin-top:-6px;color:#c9c6e6;font-size:12.5px;min-height:1em}
+#pause .pause-go{width:100%;font-size:20px;padding:12px 18px;font-weight:900;border-radius:14px;background:linear-gradient(180deg,#ffe27a,#ffc83d 45%,#f39a12);color:#3a1d00;
+  border:2px solid #fff1c4;box-shadow:0 4px 0 #9a5a00;margin:0}
+#pause .pause-go:active{transform:translateY(3px);box-shadow:0 1px 0 #9a5a00}
+#pause .pause-row{display:flex;gap:8px;align-items:center;justify-content:center}
+#pause .pause-row .ghost{flex:1;margin:0;padding:9px 10px;border-radius:12px;background:#3a4090;color:#e9e6ff;border:0;font-weight:800;box-shadow:0 3px 0 #0c0e2a}
+#pause .pause-row .ghost:active{transform:translateY(2px);box-shadow:0 1px 0 #0c0e2a}
+#pause .pause-lbl{font-size:12px;font-weight:800;color:#c9c6e6;margin-right:4px}
+#pause #pauseTm{display:inline-flex;gap:6px;background:none;border:0;padding:0}
+#pause #pauseTm button{padding:7px 14px;border-radius:11px;border:0;background:#3a4090;color:#e9e6ff;font-weight:800;box-shadow:0 3px 0 #0c0e2a}
+#pause #pauseTm button.on{background:linear-gradient(180deg,#ffe27a,#f5a623);color:#3a1d00;box-shadow:0 3px 0 #9a5a00}
+#pause .pause-quit{margin:2px 0 0;padding:9px 12px;border-radius:12px;background:rgba(232,64,47,.16);color:#ffb3a8;border:1.5px solid rgba(255,120,100,.5);font-weight:800}
+#pause .pause-quit:active{background:rgba(232,64,47,.35)}
+#pause .pause-keys{color:#9aa5bd;font-size:12px}
+#pause .ghost.sm{margin-top:0}
+@media (max-height:400px) and (orientation:landscape){
+  .pause-card{width:min(460px,80vw);gap:8px;padding:12px 14px 14px;display:grid;grid-template-columns:1fr 1fr}
+  .pause-card>b,.pause-card>.pause-sub,.pause-card>.pause-go{grid-column:1/-1}
+  .pause-card>.pause-row:not(.touch-only){grid-column:1/2;grid-row:4}.pause-card>.pause-quit{grid-column:2/3;grid-row:4;margin:0}
+  .pause-card>.pause-row.touch-only{grid-column:1/-1;grid-row:5}.pause-card>.pause-keys{grid-column:1/-1}
+  #pause .pause-row .ghost,#pause .pause-quit{white-space:nowrap;font-size:14px;padding:8px 8px}
+  #pause .pause-card b{font-size:22px}#pause .pause-go{padding:9px 14px;font-size:18px}
+}
+
+/* ---- in a match on a phone: the top bar and the HUD card never overlap ---- */
+#game #topLeft{left:max(10px,var(--sa-l));top:max(8px,var(--sa-t))}
+#game #zoomPill{right:max(10px,var(--sa-r))}
+
+/* ---- the hub ---- */
+.hub-top .hub-gear{position:static;order:3;width:40px;height:40px;flex:none;margin-left:2px}
+.hub-top .hub-coins{order:2}
+.hub-top .hub-logo{order:1}
+.hub-logo{height:clamp(30px,7vh,56px);max-width:34vw;object-fit:contain}
+#menu.hub{padding:max(8px,var(--sa-t)) max(10px,var(--sa-r)) max(8px,var(--sa-b)) max(10px,var(--sa-l))}
+.hub .ev-b.new{outline:none;box-shadow:none;border:0}
+.hub #tutBtn.new svg.gi{box-shadow:0 0 0 3px #ffc83d,0 4px 0 #0c0e2a}
+.hub .ev-badge{top:-6px;right:0}
+.hub .rail-b span{display:block;font-size:clamp(9px,1.25vw,11px);font-weight:800;line-height:1;margin-top:1px}
+.hub .rail-b svg.gi{width:46%;height:46%}
+@media (max-height:430px) and (orientation:landscape){
+  #menu.hub{--rail:clamp(58px,8.6vw,72px);gap:4px 12px}
+  .hub .rail-b{width:min(var(--rail),calc((100dvh - 64px) / 4.6))!important}
+  .hub #railHome{display:none}
+  .hub .rail-b span{display:block!important;font-size:9.5px}
+  .hub .rail-b svg.gi{width:44%!important;height:44%!important}
+  .hub-top{min-height:40px}.hub-top .hub-gear{width:36px;height:36px}.hub-top .hub-gear svg.gi{width:22px;height:22px}
+  .hub-logo{height:34px}
+  .hub-events{gap:6px 6px;align-content:center}
+  .hub .ev-b span{font-size:9.5px}
+  .stage-art .sa-tag{left:8px;bottom:6px;padding:3px 9px}.stage-art .sa-tag b{font-size:12px}.stage-art .sa-tag small{font-size:10px}
+  .hub .play-b{height:clamp(48px,13vh,60px)}
+  .hub .side-b{height:clamp(46px,12.5vh,58px)}
+}
+@media (max-height:330px) and (orientation:landscape){
+  .hub .stage-daily{display:none}
+  .stage-art .sa-tag small{display:none}
+}
+@media (orientation:portrait) and (max-width:700px){
+  .hub-top .hub-gear{position:static;translate:none}
+  .hub .rail-b{width:58px}
+}
+
+/* ---- shop, collection: on short phones the items get the room, not the header ---- */
+@media (max-height:500px) and (orientation:landscape){
+  #shop .shop-panel,#coll .panel{display:flex;flex-direction:column;height:calc(100dvh - 20px);max-height:none;padding:10px 14px 12px!important;width:min(980px,96vw)}
+  #shop .panel-hd,#coll .panel-hd{margin-bottom:6px;flex:none}
+  #shop .panel-hd h2,#coll .panel-hd h2{font-size:21px}
+  #shop .shop-tabs{flex:none;margin-bottom:6px}#shop .shop-tabs button{padding:6px 8px!important;font-size:13px}
+  #shop .shop-filter{flex:none;margin-bottom:6px}#shop .shop-filter button{padding:4px 12px!important;font-size:12px}
+  #shop .shop-note{display:none}
+  #shop .shop-grid,#coll .coll-grid{flex:1;min-height:0;max-height:none!important;overflow-y:auto;grid-template-columns:repeat(auto-fill,minmax(96px,1fr))!important;gap:8px}
+  #shop .shop-grid .it span{font-size:11px}
+}
+#menu #tutBtn.new{border-color:transparent!important;box-shadow:none!important;background:none!important;outline:0!important;color:inherit}
+#menu #tutBtn.new span{color:#ffc83d}

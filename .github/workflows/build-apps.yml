@@ -1,4 +1,4 @@
-# Builds the Patang Wars phone apps on GitHub's own machines - no Android Studio or Mac needed on your side.
+# Builds the Bo Kata! phone apps (the game was called Patang Wars before v7) on GitHub's own machines - no Android Studio or Mac needed on your side.
 #   Android: an APK (install it straight on a phone) and an AAB (for the Google Play Store)
 #   (iPhone builds are switched off for now - Android only. app/README-APP.md says how to turn them back on.)
 # Run it: GitHub -> your repository -> Actions -> "Build Android app" -> Run workflow.
@@ -90,8 +90,8 @@ jobs:
         run: |
           V=$(node -p "require('./app/package.json').version")
           mkdir -p out
-          cp app/android/app/build/outputs/apk/release/app-release.apk "out/PatangWars-$V-build$APP_BUILD.apk"
-          cp app/android/app/build/outputs/bundle/release/app-release.aab "out/PatangWars-$V-build$APP_BUILD.aab"
+          cp app/android/app/build/outputs/apk/release/app-release.apk "out/BoKata-$V-build$APP_BUILD.apk"
+          cp app/android/app/build/outputs/bundle/release/app-release.aab "out/BoKata-$V-build$APP_BUILD.aab"
           ls -la out
       - uses: actions/upload-artifact@v4
         with: { name: android-app, path: out/, if-no-files-found: error }
@@ -113,5 +113,5 @@ jobs:
           V=$(node -p "require('./app/package.json').version")
           TAG="v$V-build$APP_BUILD"
           ls -la dl
-          printf 'Patang Wars %s (build %s)\n\n- **Android:** download the .apk on the phone and open it (allow "install unknown apps").\n- **Google Play:** upload the .aab.\n' "$V" "$APP_BUILD" > notes.md
-          gh release create "$TAG" dl/* --title "Patang Wars $V (build $APP_BUILD)" --notes-file notes.md --latest
+          printf 'Bo Kata! %s (build %s)\n\n- **Android:** download the .apk on the phone and open it (allow "install unknown apps").\n- **Google Play:** upload the .aab.\n' "$V" "$APP_BUILD" > notes.md
+          gh release create "$TAG" dl/* --title "Bo Kata! $V (build $APP_BUILD)" --notes-file notes.md --latest

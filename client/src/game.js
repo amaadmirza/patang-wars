@@ -472,10 +472,10 @@
     keys[k] = 1;
     if (!G) return;
     if (G.replay && (k === 'escape' || k === ' ' || k === 'enter')) { endReplay(); return; }
-    if (k === 'escape') { if (G.swapPlayer) return closeSwap(G.swapPlayer, false); return endMatch(); }
+    if (k === 'escape') { if (G.swapPlayer) return closeSwap(G.swapPlayer, false); return pauseOpen() ? closePauseMenu() : openPauseMenu(); }
     if (G.swapPlayer) { if (k === 'enter') closeSwap(G.swapPlayer, false); return; }   // the kite picker is open: game keys wait
     if (G.over) return;
-    if (k === 'p') { if (!G.swapPlayer && !G.online) G.paused = !G.paused; }
+    if (k === 'p') { if (!G.swapPlayer && !G.online) { if (pauseOpen()) closePauseMenu(); else openPauseMenu(); } }
     else if (k === 'm') { saved.sound = !saved.sound; save(); SFX.setEnabled(saved.sound); note('Sound ' + (saved.sound ? 'on' : 'off')); }
     else if (k === 'b') toggleMusic();
     else if ((k === '=' || k === '+') && !G.online) addBot(); else if (k === '-' && !G.online) removeBot();
@@ -1198,15 +1198,28 @@
     lootView.alpha = (lootView.alpha || 0) + ((L ? 1 : 0) - (lootView.alpha || 0)) * Math.min(1, dt * 4);
     if (L) { if (lootView.focus && lootView.focus.kite !== L.kite) lootView.cam = null; lootView.focus = L; }
     if (lootView.alpha < 0.03 || !lootView.focus || !lootView.focus.kite) return;
+    // v7: Settings -> Loot window: 'small' (default, tucked in the top-right corner), 'large' (the old size) or 'off'
+    const mode = saved.lootcam === 'off' || saved.lootcam === 'large' ? saved.lootcam : 'small';
+    if (mode === 'off') return;
     const d = lootView.focus.kite, own = d.owner ? (G.viewers.includes(d.owner) && G.viewers.length === 1 ? 'Your kite' : d.owner.name + "'s kite") : 'A kite';
-    lootView.label = own + (lootView.focus.state === 'carry' ? ' — looted!' : lootView.focus.state === 'reel' ? ' — pulled down by its string!' : '');
-    const w = Math.min(320, W * (IS_TOUCH ? 0.26 : 0.3)), h = w * 0.62, x = IS_TOUCH ? W - w - 12 : 12, y = IS_TOUCH ? 60 : H - h - 12;
-    ctx.save(); ctx.globalAlpha = lootView.alpha;
-    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(x - 3, y - 3, w + 6, h + 6);
+    lootView.label = own + (lootView.focus.state === 'carry' ? ' — looted!' : lootView.focus.state === 'reel' ? ' — pulled down!' : '');
+    const big = mode === 'large';
+    const w = Math.round(big ? Math.min(320, W * (IS_TOUCH ? 0.26 : 0.3)) : Math.min(IS_TOUCH ? 190 : 230, Math.max(132, W * (IS_TOUCH ? 0.19 : 0.17)))), h = Math.round(w * (big ? 0.62 : 0.58));
+    // corner: top-right on phones (clear of the zoom buttons and the tutorial card), bottom-left on a computer
+    const tut = $('#tut'), tb = tut && !tut.classList.contains('hidden') ? tut.getBoundingClientRect() : null;
+    let x = IS_TOUCH ? W - w - Math.max(10, SAFE.r) : 12;
+    const y = IS_TOUCH ? (tb && tb.left < W - w ? tb.bottom + 8 : Math.max(8, SAFE.t)) : H - h - 12;
+    if (IS_TOUCH) { const zp = $('#zoomPill'), zr = zp && zp.offsetWidth ? zp.getBoundingClientRect() : null; if (zr && y + h > zr.top - 6) x = zr.left - w - 8; }   // never over the zoom buttons
+    lootView.box = { x, y, w, h };
+    ctx.save(); ctx.globalAlpha = lootView.alpha * (big ? 1 : 0.94);
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; rrectAt(x - 2, y - 2, w + 4, h + 4, 10); ctx.fill();
+    ctx.save(); rrectAt(x, y, w, h, 8); ctx.clip();
     drawViewport({ x, y, w, h }, lootView, dt);
-    ctx.strokeStyle = '#ffb627'; ctx.lineWidth = 2; ctx.strokeRect(x, y, w, h);
+    ctx.restore();
+    ctx.strokeStyle = '#ffb627'; ctx.lineWidth = 1.5; rrectAt(x, y, w, h, 8); ctx.stroke();
     ctx.restore();
   }
+  function rrectAt(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 
   /* ---------------- kati patang: kites cut on other rooftops drifting across the festival ----------------
    * On a real Basant the sky over your roof is never empty of loot: kites cut somewhere upwind come drifting over,
@@ -2890,10 +2903,13 @@
     }
     if (!viewer.lootcam) drawPechaMark(cam, viewer);
     if (viewer.replaycam) { ctx.restore(); return; }
-    if (viewer.lootcam) {   // picture-in-picture: just a label, no HUD
-      ctx.fillStyle = 'rgba(12,18,32,.75)'; ctx.fillRect(0, 0, w, 22);
-      ctx.fillStyle = '#ffb627'; ctx.font = '800 11px Inter,system-ui,sans-serif'; ctx.textAlign = 'left'; ctx.fillText('LOOT CHASE', 8, 15);
-      ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.font = '11px Inter,system-ui,sans-serif'; ctx.textAlign = 'right'; ctx.fillText(viewer.label || '', w - 8, 15);
+    if (viewer.lootcam) {   // picture-in-picture: just a slim label, no HUD
+      const small = w < 240, bh = small ? 16 : 22;
+      ctx.fillStyle = 'rgba(12,18,32,.72)'; ctx.fillRect(0, 0, w, bh);
+      ctx.fillStyle = '#ffb627'; ctx.font = `800 ${small ? 9 : 11}px Inter,system-ui,sans-serif`; ctx.textAlign = 'left'; ctx.fillText('LOOT', 6, bh - 5);
+      ctx.fillStyle = 'rgba(255,255,255,.8)'; ctx.font = `${small ? 9 : 11}px Inter,system-ui,sans-serif`; ctx.textAlign = 'right';
+      let lab = viewer.label || ''; const room = w - (small ? 40 : 54); while (lab.length > 4 && ctx.measureText(lab).width > room) lab = lab.slice(0, -2).trimEnd() + '…';
+      ctx.fillText(lab, w - 6, bh - 5);
       ctx.restore(); return;
     }
     // ---- controls legend at the bottom for the first 25 s of a match (and while paused) ----
@@ -2976,7 +2992,8 @@
     if (!G.paused) tutTick(dt);
     setHTML('#feed', G.feed.filter(f => G.t - f.t < 6).map(f => `<div>${f.msg}</div>`).join(''));
     setHTML('#botcount', String(G.players.filter(p => p.ctrl === 'bot').length));
-    $('#pause').classList.toggle('hidden', !G.paused || !!G.swapPlayer || G.over || !!G.replay);
+    $('#pause').classList.toggle('hidden', !(G.paused || G.menuOpen) || !!G.swapPlayer || G.over || !!G.replay);
+    if (G.menuOpen || G.paused) setHTML('#pauseSub', G.online ? 'Online - the match keeps going while this is open' : G.tut ? 'Tutorial' : esc(MODE_NAMES[G.mode] || ''));
     for (const p of G.players) { if (p.kite && p.kite.hot > 0) p.kite.hot -= dt; if (p.bubble && !G.paused) p.bubble.t -= dt; }
     if (G.debug) {
       const k = G.viewers[0].kite;
@@ -3007,6 +3024,10 @@
     return sw;
   }
   function lerpOut(sw) { for (const [k, p, b, i] of sw) { k.p = p; k.bodyAngle = b; k.incl = i; } }
+  // v7: while a panel covers the home screen, its drifting kites and glowing Play button stop animating (phones)
+  const COVERS = ['#shop', '#coll', '#lb', '#trophies', '#how', '#settings', '#mohalla', '#loginPop', '#pickPop', '#online', '#nameScreen', '#select', '#maker', '#charMaker', '#buyPop', '#rewardPop'];
+  let coverAt = 0;
+  function coverTick(now) { if (now - coverAt < 400) return; coverAt = now; const on = COVERS.some(id => { const e = $(id); return e && !e.classList.contains('hidden'); }); document.body.classList.toggle('covered', on); }
   function loop(now) {
     const raw = now - last, dt = Math.min(0.1, raw / 1000); last = now;
     qualityTick(raw);
@@ -3017,7 +3038,7 @@
       if (G) { if (G.replay) renderReplay(dt); else { const sw = G.paused ? null : lerpIn(G.acc / DT); try { render(dt); } finally { if (sw) lerpOut(sw); } } }
       if (KF_DEBUG) { const P2 = window.__perf = window.__perf || { step: 0, render: 0, frames: 0, steps: 0 }; P2.step += t1 - t0; P2.render += performance.now() - t1; P2.frames++; P2.steps += n; }
     }
-    else { SFX.menuTick(); SFX.partyUpdate([], false); }   // music keeps playing on the menus; the roofs fall quiet
+    else { SFX.menuTick(); SFX.partyUpdate([], false); coverTick(now); }   // music keeps playing on the menus; the roofs fall quiet
     requestAnimationFrame(loop);
   }
   // only touch the DOM when the text actually changed (rebuilding the feed every frame restarted its pop-in animation
@@ -3025,6 +3046,9 @@
   const htmlCache = {};
   function setHTML(sel, html) { if (htmlCache[sel] !== html) { htmlCache[sel] = html; $(sel).innerHTML = html; } }
   let DPR = 1, CW = innerWidth, CH = innerHeight, UI = 1, HUD_TOP = 64;
+  // the device's safe areas (notch, rounded corners, Android gesture bar), measured from the CSS (--sa-* in index.css)
+  const SAFE = { t: 0, r: 0, b: 0, l: 0 };
+  function measureSafe() { try { const cs = getComputedStyle(document.documentElement); for (const k of ['t', 'r', 'b', 'l']) SAFE[k] = parseFloat(cs.getPropertyValue('--sa-' + k)) || 0; } catch (e) {} }
   /* Phones: drawing the sky at full retina resolution (2-3x) made every frame fill 4-9x the pixels, and on mid-range
    * phones the game dropped to ~12 fps. The canvas now starts at a phone-friendly resolution and an adaptive quality
    * controller (QUAL) lowers it further, and switches off the heaviest glow effects, if frames still come in slow;
@@ -3033,7 +3057,7 @@
   function resize() {
     const dev = devicePixelRatio || 1;
     DPR = Math.max(Math.min(QUAL.min, dev), Math.min(QUAL.scale, dev));
-    CW = innerWidth; CH = innerHeight; UI = clamp(Math.min(CW / 1100, CH / 680), 0.6, 1);
+    CW = innerWidth; CH = innerHeight; UI = clamp(Math.min(CW / 1100, CH / 680), 0.6, 1); measureSafe();
     const tl = document.getElementById('topLeft'), r = tl && tl.getBoundingClientRect(); HUD_TOP = r && r.bottom > 0 ? r.bottom + 8 : 64;
     const w = Math.round(CW * DPR), h = Math.round(CH * DPR);
     if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
@@ -3569,9 +3593,17 @@
   $('#railHome').onclick = () => { for (const id of ['#shop', '#coll', '#lb', '#trophies', '#how', '#loginPop', '#mohalla', '#settings']) $(id).classList.add('hidden'); showMenu(); };
   $('#resAgain').onclick = () => { if (G && G.online) { leaveGameView(); return showOnline(); } const c = G && G.cfg, m = G && G.mode; if (c) startMatch(m, c); };
   $('#resMenu').onclick = () => { if (G && G.online) { netSend({ t: 'leave' }); ON.room = null; leaveGameView(); return showMenu(); } endMatch(); };
-  $('#back').onclick = endMatch;
-  $('#rotHome').onclick = () => $('#back').click();   // upright mid-match: leave without having to turn the phone first
-  $('#pauseBtn').onclick = () => { if (G && !G.swapPlayer && !G.online) G.paused = !G.paused; };
+  /* v7: one in-match menu (the ⌂ and ❚❚ buttons, Esc, Android back): Resume, Settings, controls, Quit to home.
+   * The ⌂ button used to drop you out of the match at once, and the pause screen on a phone said "Press P to continue"
+   * with no way to continue - players got stuck in it. */
+  function openPauseMenu() { if (!G || G.over || G.swapPlayer || G.replay) return; G.menuOpen = true; if (!G.online) G.paused = true; SFX.ui(); }
+  function closePauseMenu() { if (!G) return; G.menuOpen = false; if (!G.online) G.paused = false; }
+  const pauseOpen = () => !!(G && (G.menuOpen || G.paused));
+  $('#back').onclick = () => pauseOpen() ? closePauseMenu() : openPauseMenu();
+  $('#pauseResume').onclick = closePauseMenu;
+  $('#pauseQuit').onclick = () => { if (G) G.menuOpen = false; endMatch(); };
+  $('#rotHome').onclick = () => { if (G) G.menuOpen = false; endMatch(); };   // upright mid-match: leave without having to turn the phone first
+  $('#pauseBtn').onclick = () => pauseOpen() ? closePauseMenu() : openPauseMenu();
   $('#botPlus').onclick = () => G && addBot(); $('#botMinus').onclick = () => G && removeBot();
   $('#zoomIn').onclick = () => G && zoomAll(1.15);
   // phones/tablets (v6.5): a +/- pill on the right edge, and two-finger pinch on the sky (button controls; with swipe
@@ -3587,9 +3619,11 @@
   saved.replay = saved.replay !== false; saved.party = saved.party !== false;
   function renderPrefs() {
     $$('#replayPick [data-replay]').forEach(b => b.classList.toggle('on', (b.dataset.replay === 'on') === saved.replay));
+    $$('#lootPick [data-loot]').forEach(b => b.classList.toggle('on', b.dataset.loot === (saved.lootcam === 'off' || saved.lootcam === 'large' ? saved.lootcam : 'small')));
     $$('#partyPick [data-party]').forEach(b => b.classList.toggle('on', (b.dataset.party === 'on') === saved.party));
   }
   $$('#replayPick [data-replay]').forEach(b => b.onclick = () => { saved.replay = b.dataset.replay === 'on'; save(); renderPrefs(); SFX.ui(); });
+  $$('#lootPick [data-loot]').forEach(b => b.onclick = () => { saved.lootcam = b.dataset.loot; save(); renderPrefs(); SFX.ui(); if (typeof renderQuick === 'function') renderQuick(); });
   $$('#partyPick [data-party]').forEach(b => b.onclick = () => { saved.party = b.dataset.party === 'on'; save(); renderPrefs(); SFX.ui(); });
   renderPrefs();
   /* ---------------- music & sound ----------------
@@ -3729,7 +3763,7 @@
   $('#setRename').onclick = () => { if (G) return; closeSettings(); showNameScreen(showMenu); };
   $('#setReset').onclick = () => {
     if (!confirm('Reset every setting to its default? Your coins, kites and records are kept.')) return;
-    Object.assign(saved, { sound: true, music: true, musicVol: 0.6, kiteSound: true, voice: 'ur', party: true, replay: true, touchMode: 'buttons', theme: 'dark', steer: 1, gfx: 'auto', track: 'mix' });
+    Object.assign(saved, { sound: true, music: true, musicVol: 0.6, kiteSound: true, voice: 'ur', party: true, replay: true, lootcam: 'small', touchMode: 'buttons', theme: 'dark', steer: 1, gfx: 'auto', track: 'mix' });
     delete saved.touchLayout; save();
     SFX.setEnabled(true); SFX.setMusicVolume(saved.musicVol); SFX.setKiteSound(true); SFX.setVoice(saved.voice);
     applyGfx(); applyMusic(); applyTouchLayout(); renderSettings(); renderMusicPanel();
@@ -3741,6 +3775,7 @@
     const T = [['music', 'Music', () => saved.music, v => { saved.music = v; SFX.setMusic(v); }], ['sound', 'Sound effects', () => saved.sound, v => { saved.sound = v; SFX.setEnabled(v); }],
       ['vibrate', 'Vibration', () => saved.vibrate !== false, v => { saved.vibrate = v; if (v) buzz(30); }], ['kiteSound', 'Kite sound', () => saved.kiteSound, v => { saved.kiteSound = v; SFX.setKiteSound(v); }],
       ['replay', 'Cut replays', () => saved.replay, v => { saved.replay = v; }], ['party', 'Roof music', () => saved.party, v => { saved.party = v; }],
+      ['lootcam', 'Loot window', () => saved.lootcam !== 'off', v => { saved.lootcam = v ? 'small' : 'off'; }],
       ['saver', 'Battery saver', () => saved.gfx === 'saver', v => { saved.gfx = v ? 'saver' : 'auto'; applyGfx(); }], ['swipe', 'Swipe controls', () => saved.touchMode === 'swipe', v => { saved.touchMode = v ? 'swipe' : 'buttons'; applyTouchMode(); }]];
     const box = $('#quickToggles'); if (!box) return;
     box.innerHTML = T.map(([id, l, get]) => `<label class="tog"><span>${l}</span><input type="checkbox" role="switch" data-q="${id}" ${get() ? 'checked' : ''}><i aria-hidden="true"></i></label>`).join('');
@@ -3837,10 +3872,15 @@
     try { PL.SplashScreen && setTimeout(() => PL.SplashScreen.hide(), 300); } catch (e) {}
     // back: close the top panel -> leave the match (pausing it first) -> on the home screen, leave the app
     try { PL.App && PL.App.addListener('backButton', () => {
-      for (const id of ['#rewardPop', '#pickPop', '#buyPop', '#loginPop', '#settings', '#shop', '#coll', '#lb', '#trophies', '#how', '#maker', '#charMaker', '#mohalla', '#select']) {
-        const el = $(id); if (el && !el.classList.contains('hidden')) { if (id === '#select') $('#selBack').click(); else if (id === '#mohalla') $('#mhClose').click(); else if (id === '#settings') $('#setClose').click(); else el.classList.add('hidden'); return; }
+      if (!$('#ctlEditor').classList.contains('hidden')) { $('#ceCancel').click(); return; }
+      for (const id of ['#rewardPop', '#pickPop', '#buyPop', '#loginPop', '#settings', '#shop', '#coll', '#lb', '#trophies', '#how', '#maker', '#charMaker', '#mohalla', '#online', '#nameScreen', '#select']) {
+        const el = $(id); if (el && !el.classList.contains('hidden')) {
+          if (id === '#select') $('#selBack').click(); else if (id === '#mohalla') $('#mhClose').click(); else if (id === '#settings') $('#setClose').click();
+          else if (id === '#rewardPop') el.click(); else if (id === '#online') $('#onClose').click(); else if (id === '#nameScreen') $('#nameSkip').click();
+          else if (id === '#maker') $('#mkClose').click(); else if (id === '#charMaker') $('#cmClose').click(); else el.classList.add('hidden');
+          return; }
       }
-      if (G) { if (G.over) return $('#resMenu').click(); if (!G.paused) { G.paused = true; toast('Paused - press back again to go home'); return; } return endMatch(); }
+      if (G) { if (G.over) return $('#resMenu').click(); if (G.swapPlayer) return closeSwap(G.swapPlayer, false); if (G.replay) return endReplay(); if (!pauseOpen()) return openPauseMenu(); return closePauseMenu(); }
       PL.App.exitApp();
     }); } catch (e) {}
     try { PL.App && PL.App.addListener('appStateChange', st => { if (!st.isActive && G && !G.over && !G.online) G.paused = true; }); } catch (e) {}

@@ -1,4 +1,4 @@
-# Patang Wars — Android app
+# Bo Kata! — Android app (pehle Patang Wars)
 
 Ye app **offline** hai: poori game phone ke andar. Festival, Duel, Two players, Mohalla, tutorial, shop, coins, daily
 login, crates — sab chalte hain, sab kuch phone par save hota hai. **Online** aur **leaderboard** "coming soon" dikhate
@@ -22,7 +22,7 @@ GitHub ki apni machines app banati hain (Linux par Android). iPhone build abhi b
 4. github.com par apni repository kholein → **Actions** tab → agar poochhe to "I understand my workflows, go ahead and enable them".
 5. Baayen **Build Android app** → **Run workflow** → **Run workflow**.
 6. 10–20 minute. Khatam hone par run kholein, neeche **Artifacts**:
-   - `android-app` → **PatangWars-…apk** (phone par seedha install) aur **…aab** (Google Play Store ke liye)
+   - `android-app` → **BoKata-…apk** (phone par seedha install) aur **…aab** (Google Play Store ke liye)
    - `android-signing-key` → sirf **pehli** dafa (neeche dekhein — zaroori!)
 
 ### Pehli build ke baad: signing key save karein (ek dafa, 2 minute)

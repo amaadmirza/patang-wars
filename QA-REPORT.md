@@ -1,3 +1,20 @@
+# Bo Kata! v7.0 — SQA report
+
+| Check | Result |
+|---|---|
+| `npm test` (server, online, purchases, multi-pecha) | 57 + 32 + 21 + 11 passed, 0 failed |
+| Phone 740x360 / 667x300, app build: hub, Shop, Settings → Loot window, match, ⌂ → menu → Resume / Quit | pass (screenshots) |
+| Desktop 1366x768: hub, Esc opens menu, Esc resumes | pass |
+| Loot window Small (phone top-right, clear of zoom & tutorial card; desktop bottom-left), Hide (nothing drawn) | pass |
+| Opening Shop, phone, CPU 4x slower | 1683 ms → 988 ms |
+| Built-in shout voice rendered offline: v6.5 two voices (double harmonic series, envelope roughness 0.17–0.23) → v7 one voice (0.11–0.12), no clipping | pass |
+| `patch-native.js` on a stand-in Capacitor project: manifest (landscape, VIBRATE, TTS_SERVICE query), MainActivity registers BoKataVoice; both Java files compiled against stub Android/Capacitor APIs | pass |
+
+Not run here: the Gradle build itself (this workspace can't reach Google's Android SDK). GitHub Actions builds the APK.
+The native voice can only be heard on a real phone: if a phone has no Urdu/Hindi TTS voice, the game uses its own voice.
+
+---
+
 # Patang Wars v6.5 — SQA report
 
 | Check | Result |

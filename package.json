@@ -1,8 +1,8 @@
 {
   "name": "kite-fight",
-  "version": "1.6.5",
+  "version": "1.7.0",
   "private": true,
-  "description": "Patang Wars - Basant rooftop kite fighting. Node server: serves the built game and keeps players' records.",
+  "description": "Bo Kata! - Basant rooftop kite fighting. Node server: serves the built game and keeps players' records.",
   "license": "UNLICENSED",
   "engines": {
     "node": ">=18"

@@ -1,14 +1,36 @@
-# Patang Wars
+# Bo Kata!
 
 **Cut · Loot · Rule the sky.**  ·  *Basant ka asli muqabla — pecha lagao, Bo Kata!*
 
-(Pehle naam: Kite Fight. Logo: `client/assets/brand/logo.svg`, emblem: `emblem.svg`, app icon: `icon.svg`.
+(Pehle naam: Patang Wars, us se pehle Kite Fight. Logo: `client/assets/brand/logo.svg`, hub ka wordmark: `wordmark.svg`,
+emblem: `emblem.svg`, app icon: `icon.svg`.
 Doosre naam/logo concepts: `client/assets/brand/concepts/` — `python3 client/tools/make-logos.py` se dobara banti hain.)
 
 ## Phone app (Android APK)
 
 `app/` mein poori game ka **offline** phone app hai (Capacitor 8). GitHub par muft banta hai — Android Studio ya Mac ke
 baghair: **`app/README-APP.md`** dekhein (qadam ba qadam). Workflow: `.github/workflows/build-apps.yml`.
+
+## v7.0 — naya naam: **Bo Kata!**
+- **Naam badla:** Patang Wars → **Bo Kata!** Tagline wahi: *Cut · Loot · Rule the sky.* Naya logo, hub wordmark, app splash.
+  Android app ka **appId wahi** (`pk.patangwars.game`) aur signing key wahi — naya APK purane ke upar install hota hai,
+  coins aur patangein qaim. Server ka data folder bhi wahi (`~/PatangWars-data`).
+- **Loot window chhoti:** loot chase wali choti tasveer ab ~25% chhoti, kone mein (phone: upar-daayen, zoom buttons se hat kar;
+  computer: neeche-baayen), patli label. **Settings → Gameplay → Loot window: Small / Large / Hide**, aur General mein ek switch.
+- **Match mein "stuck" khatam:** phone par Pause screen likhta tha "Press P to continue" — koi button nahi tha, log phans jaate
+  the. Ab asli menu: **Resume**, Settings, Controls (Buttons/Swipe, Move buttons), **Quit to home**. ⌂ button ab foran match
+  khatam nahi karta, menu kholta hai. Esc aur Android **Back** bhi yehi menu kholte/band karte hain.
+- **Menu tez aur saaf (phone + web):** phone par panels ke peeche live blur aur animated saaye band (Android WebView ka sab se
+  bhaari kaam); Shop/Kites ki 200+ patangein ab sirf nazar aane par paint hoti hain (shop khulna ~40% tez); panel lamba ho to
+  upar se scroll hota hai (kabhi kat kar phansta nahi); tap foran (double-tap zoom ka intezar nahi); panel khula ho to peeche
+  ki animation ruk jaati hai. Hub: rail par labels (Online, Kites, Mohalla, Shop), Settings ka gear upar coins ke saath.
+  Android Back ab har screen band karta hai (Online, naam, kite maker, buttons editor bhi).
+- **"Bo kaata!" ki awaaz saaf:** purani built-in awaaz do aawazon se banti thi jo 3.5 sur ke faasle par ek saath bolti thin —
+  aapas mein takra kar "distorted" lagti thi (spectrogram mein do harmonic lines). Ab ek hi saaf awaaz, gale jaisi
+  resonance, aur limiter. **Phone app** ab Android ki apni Urdu/Hindi TTS awaaz istemal karta hai (naya chhota native
+  plugin `BoKataVoice`, `app/scripts/patch-native.js` banata hai) — WebView mein speechSynthesis hota hi nahi tha, is liye
+  app hamesha robot awaaz par jaata tha. Browser mein bhi phone ki awaaz ab asli speed/pitch par (pehle pitch badal kar
+  "chipmunk" ho jaati thi); door ki chhaton aur bachon ke naare chhoti built-in awaaz mein, aap ka naara nahi kaatte.
 
 ## v6.5
 - **Pecha ki awaaz** badli: pehle tez "beep" aur bareek si-si wali hiss thi; ab halki dor ki ragad (neechi, narm, thodi

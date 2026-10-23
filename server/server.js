@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* Patang Wars server - no dependencies, plain Node (18+).
+/* Bo Kata! server - no dependencies, plain Node (18+).
  *
  *   npm run build && npm start            serves dist/public on HOST:PORT (default 0.0.0.0:8080)
  *   npm run dev                           serves client/ straight from source (no build; test hook on)
@@ -355,7 +355,7 @@ ws.on('connection', (sock, req) => {
 
 server.on('clientError', (err, socket) => { if (socket.writable) socket.end('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n'); socket.destroy(); });
 server.listen(CFG.port, CFG.host, () => {
-  console.log(`Patang Wars ${DEV ? '(DEV - source files, test hook on)' : ''} on http://${CFG.host}:${CFG.port}`);
+  console.log(`Bo Kata! ${DEV ? '(DEV - source files, test hook on)' : ''} on http://${CFG.host}:${CFG.port}`);
   console.log(`  player records: ${CFG.dataDir}`);
   if (CFG.host === '0.0.0.0') {
     const nets = require('os').networkInterfaces();

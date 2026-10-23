@@ -1,6 +1,6 @@
 {
   "appId": "pk.patangwars.game",
-  "appName": "Patang Wars",
+  "appName": "Bo Kata!",
   "webDir": "www",
   "backgroundColor": "#1e2350",
   "android": { "backgroundColor": "#1e2350", "allowMixedContent": false, "webContentsDebuggingEnabled": false },

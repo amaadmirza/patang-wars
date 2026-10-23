@@ -52,7 +52,7 @@ def kite(cx, cy, w, h, rot, cl, cr, ink='#2a0f1c', sw=5, extra=''):
             f'<path d="M{top} L{bot}" stroke="{ink}" stroke-width="{sw * .8}"/>'
             f'<path d="M{L} Q{P(0, -h * .32)} {R}" fill="none" stroke="{ink}" stroke-width="{sw * .8}"/>')
 
-# ---------------------------------------------------------------- 1. PATANG WARS (recommended)
+# ---------------------------------------------------------------- 1. PATANG WARS (the v6 name; its emblem is still the game's emblem)
 def patang_wars(emblem_only=False):
     defs = ('<linearGradient id="pwG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6d6"/><stop offset=".45" stop-color="#ffd23f"/><stop offset="1" stop-color="#ff8f1f"/></linearGradient>'
             '<radialGradient id="pwSun" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffdb6e"/><stop offset=".7" stop-color="#ff8a3d"/><stop offset="1" stop-color="#e2453c"/></radialGradient>'
@@ -82,6 +82,27 @@ def patang_wars(emblem_only=False):
             f'<path d="{d2}" fill="#fff" transform="translate(0 -6)"/>'
             f'<path d="{d3}" fill="#ffd23f"/>')
     return svg(W, 420, body, defs)
+
+
+# ---------------------------------------------------------------- 0. BO KATA! (v7 - the chosen name)
+def bo_kata(word_only=False):
+    """The emblem (two kites crossing over the sun) + BO KATA! in the game's yellow, the tagline on a red ribbon."""
+    em = patang_wars(True)
+    defs = em[em.index('<defs>') + 6:em.index('</defs>')] + ('<linearGradient id="bkY" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6d6"/>'
+            '<stop offset=".45" stop-color="#ffd23f"/><stop offset="1" stop-color="#ff8f1f"/></linearGradient>')
+    emblem = em[em.index('</defs>') + 7:em.rindex('</svg>')]
+    x0 = 20 if word_only else 430
+    d1, w1 = text_path('BO KATA!', 'blackit', 168, x0, 222, track=4, anchor='start')
+    mx = x0 + w1 / 2
+    d2, w2 = text_path('CUT  ·  LOOT  ·  RULE THE SKY', 'xbold', 34, mx, 316, track=6)
+    rw = w2 / 2 + 46
+    ribbon = (f'<path d="M{mx-rw} 270 L{mx+rw} 270 L{mx+rw+30} 302 L{mx+rw} 334 L{mx-rw} 334 L{mx-rw-30} 302 Z" fill="#e63946" stroke="#2a0f1c" stroke-width="8" stroke-linejoin="round"/>')
+    W = int(max(x0 + w1, mx + rw + 30) + 34)
+    body = ('' if word_only else f'<g transform="translate(10 10)">{emblem}</g>') + (
+            f'<path d="{d1}" fill="none" stroke="#2a0f1c" stroke-width="24" stroke-linejoin="round" transform="translate(0 6)"/>'
+            f'<path d="{d1}" fill="none" stroke="#2a0f1c" stroke-width="22" stroke-linejoin="round"/>'
+            f'<path d="{d1}" fill="url(#bkY)"/>' + ribbon + f'<path d="{d2}" fill="#fff"/>')
+    return svg(W, 380 if not word_only else 360, body, defs)
 
 # ---------------------------------------------------------------- 2. PATANG RAJA
 def patang_raja():
@@ -132,5 +153,7 @@ if __name__ == '__main__':
     for n, fn in [('1-patang-wars', patang_wars), ('2-patang-raja', patang_raja), ('3-sky-pecha', sky_pecha), ('4-basant-kings', basant_kings)]:
         open(os.path.join(OUT, n + '.svg'), 'w').write(fn())
     open(os.path.join(ROOT, 'assets', 'brand', 'emblem.svg'), 'w').write(patang_wars(True))
-    open(os.path.join(ROOT, 'assets', 'brand', 'logo.svg'), 'w').write(patang_wars())
+    open(os.path.join(OUT, '0-bo-kata.svg'), 'w').write(bo_kata())
+    open(os.path.join(ROOT, 'assets', 'brand', 'logo.svg'), 'w').write(bo_kata())
+    open(os.path.join(ROOT, 'assets', 'brand', 'wordmark.svg'), 'w').write(bo_kata(True))
     print('ok')
