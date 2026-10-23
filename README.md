@@ -69,6 +69,20 @@ Everything is automatic once a change is pushed to `main`:
 
 You can also start a build by hand: Actions → Build Android app → Run workflow.
 
+> **Status on 23 Oct 2026: the signing key is NOT saved yet.** Builds 4, 5 and 6 were each signed with a different,
+> freshly made key (checked by comparing their certificates), so a phone cannot update one over another - Android says
+> "App not installed" until the old app is uninstalled (which deletes that phone's offline coins and kites).
+> Fix it once, within 7 days of build 6 (23 Oct 2026):
+> 1. GitHub → **Actions** → the run *"v7.1 Bo Kata!: kite turns by itself…"* → at the bottom, **Artifacts** →
+>    download **android-signing-key** (a zip with two .txt files).
+> 2. Repository → **Settings → Secrets and variables → Actions → New repository secret**, twice:
+>    `ANDROID_KEYSTORE_BASE64` = the whole text of `ANDROID_KEYSTORE_BASE64.txt`,
+>    `ANDROID_KEYSTORE_PASSWORD` = the text of `ANDROID_KEYSTORE_PASSWORD.txt`.
+> 3. Keep the two files somewhere private (Google Drive, USB). Every later build then uses the same key as build 6, so
+>    phones that install build 6 can update to all future versions.
+>
+> To check two APKs: `python3 tools/qa/apkcert.py old.apk new.apk` - the two certificate hashes must be equal.
+
 ## 4. The game code (client/src)
 
 | File | What it does | Shared with the server? |

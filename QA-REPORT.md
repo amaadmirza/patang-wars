@@ -14,6 +14,10 @@ and stuck screens. Tools: `tools/qa/` (see README).
 | `npm test` / physics regression (`client/tools/test-physics.js`) | | 121/121, 50/50 |
 | Performance, same seed, 10 kites Hard, 4x slower CPU, 2x resolution | | v7.0 9.4 fps -> v7.1 14 fps; frames over 100 ms 56 -> 17 |
 
+**Release check (APK v1.7.1-build6 from GitHub):** contains v7.1 (idle-spin switch, zoom slider, version label), no retired
+kite pictures, 202 game files. **Signing: each build so far (4, 5, 6) has a different certificate** - the repository's signing
+key secrets were never saved, so phones cannot update over an older install. Steps to fix are in README.md section 3.
+
 **Bug found and fixed:** after "Quit to home" from the pause menu, the pause overlay kept its open state and could flash for a
 frame at the start of the next match. `endMatch()` now closes it.
 
