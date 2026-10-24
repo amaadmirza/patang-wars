@@ -1,3 +1,20 @@
+# v7.3 SQA (idle rotation, flying, sail, pecha)
+
+| Check | Result |
+|---|---|
+| UI suite, web, computer 1366x768 | **28/28** |
+| UI suite, web, phone 844x390 | **28/28** |
+| UI suite, Android app bundle (offline) | **27/27** |
+| Online: host + friend in one room | **10/10**, no console errors |
+| `npm test` / physics checks | **121/121**, **50/50** |
+| No key pressed for 6 s | kite turns **0°** (v7.2: 1217°, 3.5 turns), stays nose-up at height |
+| Beginner hands, 2.5 min (v7.1 → v7.3; v7.0 for reference) | above 15 m 59% → **91%** (v7.0 93%); median height 20 → **48 m**; roof hits 2 → **0** |
+| Fly held overhead | climbs 14 → 20 m in 4 s (was frozen at 0.1 m/s for 4.5 s) |
+| Khainch close, then Fly | no spin, no roof crash (was: spun 156° and hit the roof) |
+| Pecha, right move vs hold still (Normal bot, real keys) | right move 5 won / 1 lost; hold still 0 / 6 |
+| Busy Hard Festival, own JS per frame (CPU 2x slower) | worst 76 ms, 0 frames over 100 ms, p99 32 ms |
+| 6 min Hard Festival soak | 107 cuts, 45 loot, 0 errors, no broken kites |
+
 # v7.2 SQA (kite shape, stalls, website)
 
 | Check | Result |

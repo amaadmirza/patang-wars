@@ -11,6 +11,22 @@ Doosre naam/logo concepts: `client/assets/brand/concepts/` — `python3 client/t
 `app/` mein poori game ka **offline** phone app hai (Capacitor 8). GitHub par muft banta hai — Android Studio ya Mac ke
 baghair: **`app/README-APP.md`** dekhein (qadam ba qadam). Workflow: `.github/workflows/build-apps.yml`.
 
+## v7.3
+- **Bina button dabaye patang ab khud nahi ghoomti:** v7.1 ka "idle ghoomna" (chhorne par patang ~200°/s ghoomti thi,
+  6 s mein 3.5 chakkar) patang ka rukh kahin bhi chhor deta tha, aur agla Fly use ghalat taraf ya chhat mein bhej deta tha.
+  Ab chhorne par patang **naak upar, ek jagah tik kar** hover karti hai (v7.0 jaisa). Setting "Kite turns when left alone"
+  ab default **off**; on karein to dheemi (~70–100°/s). Dheel par ghoomna pehle jaisa.
+  - beginner test (2.5 min, wahi random haath): 15 m se upar waqt 59% → **91%**, median unchai 20 → **48 m**, chhat se takkar 2 → **0**.
+- **Sar ke oopar Fly par patang hawa mein jam jaati thi:** Fly ke waqt naak ke saath hawa ka zor bhi kaat diya jata tha,
+  to zenith par patang 4–5 s bilkul ruki rehti (0.1 m/s) aur dor bekaar nikalti rehti. Ab wahan haath ki pakad patang ki
+  "power" ke hisaab se: patang chadhti hai aur hawa use wapas bahar le jaati hai; dor sirf utni nikalti hai jitni patang le.
+- **Khainch ke baad patang ka ghoom kar chhat mein girna:** khainch se patang 8 m ke andar aaye to reel ki safety dor dheeli
+  karti thi, aur game use player ki dheel samajh kar patang ghuma deta tha — agla Fly use chhat mein maar deta. Ab safety
+  wali dheel ghoomna nahi laati.
+- **Sail ka jhukaav aur kam:** mudte waqt ~17° (pehle 22°), dheel par ghoomte waqt sail ka tilt aadha — patang dabba nahi lagti.
+- Pecha check: sahi chaal (upar se dheel, neeche se khainch + jhatka) jeetti hai, ruk kar rehna haarta hai; ek browser par
+  sab se bura frame 51 ms, 100 ms se lamba koi frame nahi.
+
 ## v7.2
 - **Patang ki shakal ab saaf rehti hai (tunka, khainch, left/right):** paper sail bohot zyada mudta aur ghoomta tha.
   - steer par sail ka jhukaav (roll) pehle 52° tak jata tha, ab zyada se zyada ~16°; khainch par kaman ka bend 0.28 se 0.15.

@@ -391,7 +391,12 @@
       const power = (Math.max(0.06, windowP) * (1 - inward) + Math.max(0.65, windowP) * inward) * clamp(Wh / s.wind[1], 0.7, 1.05);
       const activeTarget = power * Math.min(13 + 3 * this.comboE, 5 + 6 * this.thrustRamp + 5 * this.tapBoost + 6 * surge + 3 * this.comboE);   // a kite under a flier's hand moves briskly, not like a jet: ~12 m/s
       let Fres = add(Fdrag, add(FlineDrag, Fparasitic));
-      if (drive > 0 && dot(this.v, N) < activeTarget) { const c = dot(Fres, N); if (c < 0) Fres = sub(Fres, mul(N, c * drive)); }
+      // v7.3: how much the flier's hands can hold against the wind follows the POWER the kite has where it is. Overhead
+      // (or out at the edge of the window) the nose points upwind and there is next to no power - but the drag along the
+      // nose was still cancelled and the nose speed still enforced, so a held Fly froze the kite motionless at the zenith
+      // for seconds while line poured out (measured: 4.5 s at 0.1 m/s). Now the wind wins there and carries it back out.
+      const grip = clamp((power - 0.06) / 0.3, 0.12, 1);
+      if (drive > 0 && dot(this.v, N) < activeTarget) { const c = dot(Fres, N); if (c < 0) Fres = sub(Fres, mul(N, c * drive * grip)); }
       let F = add(add(Flift, Fres), add(Fgrav, Fspring));
       const mass = this.virtualMass;
       let a = mul(F, 1 / mass);
@@ -423,7 +428,7 @@
       const along = dot(this.v, N);
       const wantSpeed = along + (activeTarget - along) * Math.min(1, demand / 0.3);
       if (demand > 0.004 && !grounded) {
-        const newAlong = along + (wantSpeed - along) * Math.min(1, dt / 0.15);
+        const newAlong = along + (wantSpeed - along) * Math.min(1, dt / 0.15) * (wantSpeed > along ? grip : 1);
         this.v = add(this.v, mul(N, newAlong - along));
       }
       // the disbicar dart: delivered as a smooth velocity impulse (not an instant snap) over ~0.15s

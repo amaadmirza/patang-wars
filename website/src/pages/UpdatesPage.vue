@@ -20,6 +20,12 @@ export default {
   name: 'UpdatesPage',
   setup() {
     const releases = [
+      { v: '7.3', title: 'A kite that listens', changes: [
+        'Let go and your kite now settles nose-up into a steady hover, instead of spinning round and round. Fly goes where you point it.',
+        'Holding FLY right overhead no longer freezes the kite in mid-air: it climbs and the wind carries it back out.',
+        'After a khainch brings the kite close, it no longer starts spinning and diving into the roof.',
+        'The paper sail tips less when you steer or give dheel, so it always looks like a patang.'
+      ] },
       { v: '7.2', title: 'Smooth pechas, steady kites', changes: [
         'No more freezes in the middle of a pecha: the people on the roofs and the street kids are drawn far more efficiently.',
         'Your kite keeps its shape: tunka, khainch and steering no longer twist and bend it out of shape.',

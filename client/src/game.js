@@ -416,7 +416,7 @@
 
   /* ---------------- first-time tutorial ---------------- */
   const TUT = [
-    { text: 'Hold <b>&uarr;</b> (Fly). The kite flies wherever its <b>nose</b> points. Let go and it slowly turns by itself - Fly again when the nose points your way.', touch: 'Hold <b>FLY</b>. The kite flies wherever its <b>nose</b> points. Let go and it slowly turns by itself - FLY again when the nose points your way.', swipe: 'Put a finger on the sky and drag it a little <b>down</b> &#9660; and hold: FLY. The kite flies wherever its <b>nose</b> points. Let go and it slowly turns by itself.', done: c => c.fly > 1.2 },
+    { text: 'Hold <b>&uarr;</b> (Fly). The kite flies wherever its <b>nose</b> points. Let go and it settles nose-up into a steady hover.', touch: 'Hold <b>FLY</b>. The kite flies wherever its <b>nose</b> points. Let go and it settles nose-up into a steady hover.', swipe: 'Put a finger on the sky and drag it a little <b>down</b> &#9660; and hold: FLY. The kite flies wherever its <b>nose</b> points. Let go and it settles nose-up into a steady hover.', done: c => c.fly > 1.2 },
     { text: 'Hold <b>&larr;</b> or <b>&rarr;</b> to turn the nose, then Fly again to go that way.', touch: 'Hold <b>&#9664;</b> or <b>&#9654;</b> to turn the nose, then FLY again to go that way.', swipe: 'Drag <b>left or right</b> to turn the nose (further = faster), then drag down to fly that way.', done: c => c.turn > 1.2 },
     { swipe: '<b>Tunka:</b> <b>tap</b> the sky quickly 3 times. Each short tug straightens the kite and makes it dart.', touch: '<b>Tunka:</b> tap <b>FLY</b> quickly 3 times. Each short tug straightens the kite and makes it dart.', text: '<b>Tunka:</b> tap <b>&uarr;</b> quickly 3 times. Each short tug straightens the kite and makes it dart.', done: c => c.tap >= 3 },
     { swipe: '<b>Dheel:</b> drag <b>up</b> &#9650; and hold to let line out. A loose patang turns by itself - tap for a tunka when its nose points where you want.', touch: '<b>Dheel:</b> hold <b>DHEEL</b> to let line out. A loose patang turns by itself - tap FLY when its nose points where you want.', text: '<b>Dheel:</b> hold <b>D</b> to let line out. A loose patang starts to turn by itself - tunka when its nose points where you want.', done: c => c.send > 1.5 },
@@ -577,7 +577,7 @@
       // only when it is truly overhead (over ~68 deg) or on a very short line, and never past 60 m on its own - beyond that,
       // how far out to fly is the player's call (dheel)
       const top = clamp((elev - 1.19) / 0.2, 0, 1), short = clamp((24 - k.lineLen) / 14, 0, 1), feed = Math.max(top, short * 0.6);
-      if (feed > 0.02 && k.lineLen < 60) {
+      if (feed > 0.02 && k.lineLen < 60 && k.lineLen < r0 + 1.2) {   // v7.3: only as fast as the kite takes it (it used to pour out slack overhead)
         k.lineLen += (2.2 + 2.6 * feed) * feed * DT;
         const w = G.wind.at(k.p, G.t), wh = Math.hypot(w[0], w[1]) || 1;
         k.v[0] += (w[0] / wh) * 4.5 * top * DT; k.v[1] += (w[1] / wh) * 4.5 * top * DT;   // the wind takes it back out of the overhead dead spot
@@ -607,7 +607,9 @@
     }
     // (steering itself is a steady turn RATE in physics.js: the nose turns while the key is held and stops when it's let go)
     if (!inp.turn) {
-      const slack = clamp(k.sendE || 0, 0, 1), lean = k.lean || 0, taut = 1 - slack;
+      // v7.3: the reel's close-range safety (autoOut) also pays line out - that is not the player's dheel, and it used to
+      // set the kite spinning (ghoomna) right after a khainch brought it in close, so the next Fly shot it off into the roof
+      const slack = k.autoOut ? 0 : clamp(k.sendE || 0, 0, 1), lean = k.lean || 0, taut = 1 - slack;
       const dir = lean || k.turnDir || k.lastSwingDir || 1;
       // SELF-RIGHTING, only when the hands are still: a kite left alone on a taut line slowly weathervanes back to
       // nose-up and settles into a hover (a stable box/delta in well under a second, a patang - which is meant to be
@@ -620,17 +622,21 @@
        * steadily, ~150-220 deg/s (a turn every 2-2.5 s), in one direction, and a pull stops it dead within ~0.25 s so it
        * flies straight along its nose; let go again and it starts turning again, now and then the other way. Ours froze
        * nose-up instead (3 deg/s) - the "rotation" difference. Your own kite now does what the video's does (Settings ->
-       * General -> "Kite turns when left alone", on by default).
+       * General -> "Kite turns when left alone").
+       * v7.3: players found a kite that kept spinning (~200 deg/s, 3.5 turns in 6 s) with nobody touching it "disturbed" -
+       * its nose ended up anywhere, so the next Fly sent it off at random or into the roof. It is now OFF by default: a
+       * kite left alone settles nose-up into a steady hover (the self-righting below). Switched on, it turns at a calm
+       * ~70-100 deg/s.
        * The turn is the SAIL's (k.idleAng, added to the drawn angle after the physics step): the line keeps the kite hanging
        * in its hover while it turns, exactly as on a real roof - if the flight nose turned with it, the lift swept round
        * with the nose and the kite sank onto the roof in ~12 s. The moment you pull, tunka or steer, the kite takes up the
        * direction its nose is showing and flies that way (see kiteTakeAim). Bots and the pecha rules are untouched. */
-      const idleOk = p.ctrl.startsWith('human') && saved.idleSpin !== false && still && !inp.send && (k.sendE || 0) < 0.1 && !k.launch && !k.onGround && !hooked && !k.landingMode;
+      const idleOk = p.ctrl.startsWith('human') && saved.idleSpin === true && still && !inp.send && (k.sendE || 0) < 0.1 && !k.launch && !k.onGround && !hooked && !k.landingMode;
       k.idleT = idleOk ? (k.idleT || 0) + DT : 0;
       if (k.idleT > 0.3 && k.idleT - DT <= 0.3) k.idleDir = (k.idleDir ? (Math.random() < 0.3 ? -k.idleDir : k.idleDir) : Math.sign(dir) || 1);   // a new spin: usually the same way, sometimes the other
       const wantI = k.idleT > 0.3 ? 1 : 0;
       k.idleE = (k.idleE || 0) + (wantI - (k.idleE || 0)) * Math.min(1, DT / (wantI ? 0.22 : 0.06));   // eases in over ~0.25 s
-      if (k.idleE > 0.002) { const e = k.idleE, sm = e * e * (3 - 2 * e); k.idleAng = (k.idleAng || 0) + (k.idleDir || 1) * (2.6 + loose * 1.6) * (k.turnMul || 1) * sm * DT; }
+      if (k.idleE > 0.002) { const e = k.idleE, sm = e * e * (3 - 2 * e); k.idleAng = (k.idleAng || 0) + (k.idleDir || 1) * (1.1 + loose * 0.6) * (k.turnMul || 1) * sm * DT; }
       else if (!idleOk) kiteTakeAim(k);
       const spinning = clamp(k.spinE || 0, 0, 1), right = taut * (1 - spinning) * (1 - spinning);   // no tug-of-war with the ghoomna
       const hw = Math.atan2(Math.sin(k.headingAngle), Math.cos(k.headingAngle));   // -pi..pi: the short way back to nose-up
@@ -2812,14 +2818,14 @@
     const turnBank = clamp(-(k.headingVel || 0) * 0.03, -0.2, 0.2);
     const rT = (free ? 0 : (k.roll || 0)) * 0.35 + turnBank + n1 * (0.05 + 0.1 * loose);
     const tk = k.tunkaT || 0; if (tk > a.tk + 0.2) { a.rv += (k.tunkaDir || 1) * 1.4; a.pv -= 0.9; } a.tk = tk;   // a tunka nudges the sail
-    a.rv += (90 * (rT - a.r) - 13 * a.rv) * dt; a.r = clamp(a.r + a.rv * dt, -0.38, 0.38);   // ~1.5 Hz, well damped
+    a.rv += (90 * (rT - a.r) - 13 * a.rv) * dt; a.r = clamp(a.r + a.rv * dt, -0.3, 0.3);   // v7.3: at most ~17 deg   // ~1.5 Hz, well damped
     const pT = n2 * 0.07 * (0.4 + loose) + pull * 0.08 - send * 0.05;
     a.pv += (90 * (pT - a.p) - 9 * a.pv) * dt; a.p += a.pv * dt;
     a.zv += (60 * (n2 * 0.09 * loose - a.z) - 8 * a.zv) * dt; a.z += a.zv * dt;   // a small rock in the picture plane
     a.flT += dt * (9 + 6 * load);
     // turning on its own (idle ghoomna or dheel), the sail tips back and rocks onto its edge, as in the reference video
     const spinV = free ? 0 : clamp(Math.max(k.idleE || 0, k.spinE || 0), 0, 1);
-    a.roll = a.r + spinV * 0.14 * Math.sin(t * 2.3 + ph); a.pitch = (k.incl || 0) + clamp(a.p, -0.15, 0.15) + spinV * 0.12; a.rot = clamp(a.z, -0.13, 0.13);
+    a.roll = a.r + spinV * 0.08 * Math.sin(t * 2.3 + ph); a.pitch = (k.incl || 0) + clamp(a.p, -0.15, 0.15) + spinV * 0.07;   // v7.3: a spinning kite stays a kite, not a tumbling box a.rot = clamp(a.z, -0.13, 0.13);
     a.bow = free ? 0.07 : 0.1 + 0.05 * load + 0.006 * Math.sin(8.5 * t + ph) * load;
     a.flA = 0.012 + 0.012 * load + (free ? 0.012 : 0);
     return a;
@@ -4034,7 +4040,7 @@
     const T = [['music', 'Music', () => saved.music, v => { saved.music = v; SFX.setMusic(v); }], ['sound', 'Sound effects', () => saved.sound, v => { saved.sound = v; SFX.setEnabled(v); }],
       ['vibrate', 'Vibration', () => saved.vibrate !== false, v => { saved.vibrate = v; if (v) buzz(30); }], ['kiteSound', 'Kite sound', () => saved.kiteSound, v => { saved.kiteSound = v; SFX.setKiteSound(v); }],
       ['replay', 'Cut replays', () => saved.replay, v => { saved.replay = v; }], ['party', 'Roof music', () => saved.party, v => { saved.party = v; }],
-      ['idleSpin', 'Kite turns when left alone', () => saved.idleSpin !== false, v => { saved.idleSpin = v; }],
+      ['idleSpin', 'Kite turns when left alone', () => saved.idleSpin === true, v => { saved.idleSpin = v; }],
       ['lootcam', 'Loot window', () => saved.lootcam !== 'off', v => { saved.lootcam = v ? 'small' : 'off'; }],
       ['saver', 'Battery saver', () => saved.gfx === 'saver', v => { saved.gfx = v ? 'saver' : 'auto'; applyGfx(); }], ['swipe', 'Swipe controls', () => saved.touchMode === 'swipe', v => { saved.touchMode = v ? 'swipe' : 'buttons'; applyTouchMode(); }]];
     const box = $('#quickToggles'); if (!box) return;

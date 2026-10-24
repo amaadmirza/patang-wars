@@ -27,8 +27,8 @@
     <section class="hw-sec hw-two" aria-labelledby="hw-fly">
       <div>
         <h2 id="hw-fly">Flying</h2>
-        <p>Let go of everything and your patang hangs on the wind and slowly turns by itself, like a real one. Press FLY the moment its nose points where you want to go, and it flies that way. To aim it yourself, steer: a quick tap nudges the nose, holding turns it fast.</p>
-        <p>Like a real patang it runs out of power at the edges of the sky and straight overhead. Give it DHEEL and it spins faster and runs away with the line. Prefer a kite that holds still? Settings, General, Kite turns when left alone.</p>
+        <p>Let go of everything and your patang settles nose-up into a steady hover. To aim it, steer: a quick tap nudges the nose, holding turns it fast. Then press FLY and it flies the way its nose points.</p>
+        <p>Like a real patang it runs out of power at the edges of the sky and straight overhead. Give it DHEEL and a loose patang spins by itself and runs away with the line. Want it to turn slowly when left alone too? Settings, General, Kite turns when left alone.</p>
         <p>Kite down on a roof? Press FLY and it launches again from there.</p>
       </div>
       <figure class="hw-fig">
@@ -134,7 +134,7 @@ export default {
       { how: 'Dheel on top, khainch below', pct: 69, best: true }
     ];
     const tips = [
-      { title: 'Let it turn, then pull', text: 'Take your hands off and a patang slowly turns by itself. Watch the nose, and the moment it points where you want to go, press FLY. It is faster than steering and it is how real fliers aim.' },
+      { title: 'Let it spin, then tunka', text: 'Give a little DHEEL and a patang spins on the slack line. Watch the nose, and the moment it points where you want to go, tap FLY for a tunka. It is faster than steering and it is how real fliers aim.' },
       { title: 'Fight from above', text: 'Climb over a rival before you cross their line. From on top, a long dheel does the cutting for you while they struggle underneath.' },
       { title: 'Never hold still', text: 'In a pecha the moving string cuts. If you are underneath, khainch hard; if you are losing, a jhatka or two buys you the moment you need.' },
       { title: 'Watch your line wear', text: 'Your card in the corner shows tension and line wear. A worn line goes quickly, so back out of a bad pecha the way you came in, and fight again later.' },

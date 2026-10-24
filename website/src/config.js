@@ -5,5 +5,5 @@
 export default {
   apkUrl: 'https://github.com/amaadmirza/patang-wars/releases/latest',
   playUrl: '',
-  version: '7.2'
+  version: '7.3'
 };
