@@ -643,20 +643,15 @@
       k.headingAngle -= 2 * Math.sin(hw / 2) * (0.7 + 2.6 * stab) * right * still * DT;   // strongest when upside down, so it never just dives in
       // an off-centre kanni keeps leaning it to one side, most of all on slack line
       if (lean) k.headingAngle += 0.55 * (0.15 + 0.85 * slack) * Math.sign(lean) * DT;
-      /* v7.4 GHOOMNA ON DHEEL, measured from the player's reference video (WhatsApp 24 Oct): while line is let out the
-       * patang spins by itself at ~170-270 deg/s - never perfectly even (it surges and eases), now and then reversing - and
-       * the moment the flier pulls (Fly, tunka or khainch) it stops DEAD with its nose where it was, and flies that way.
-       * Only on dheel: with the hands still the kite hovers nose-up. (Bots keep spinning on any slack, as before.) */
+      /* v7.5 GHOOMNA ON DHEEL: the steady, smooth spin of v7.2 (players found v7.4's surging, reversing 3D spin
+       * "disturbed") - one direction, an even rate that eases in and out. Kept from v7.4: only while dheel is held (hands
+       * still = the kite hovers), the moment you Fly, tunka or khainch it stops dead with the nose where it was, and a
+       * kite hooked in a pecha holds steady. (Bots keep spinning on any slack, as before.) */
       const hands = !!(inp.thrust || inp.pull || inp.tunka || k.tunkaT > 0.5);
-      const dheelOn = p.ctrl.startsWith('human') ? !!inp.send : slack > 0.3;
-      // hooked in a pecha the dor is loaded across the other line: the kite holds its place while the line does the work
-      const want = hands || hooked ? 0 : dheelOn ? (loose > 0.5 ? 1 : 0.55) : 0;
-      if (want > 0 && (k.spinE || 0) < 0.05) { k.spinDir = Math.sign(dir) || 1; k.spinDirE = k.spinDir; k.revT = 1.5 + Math.random() * 3; }   // a new spin
-      if ((k.spinE || 0) > 0.3 && (k.revT -= DT) <= 0) { if (Math.random() < 0.45) k.spinDir = -(k.spinDir || 1); k.revT = 1.5 + Math.random() * 3; }   // now and then the other way
-      k.spinDirE = (k.spinDirE ?? (k.spinDir || 1)) + ((k.spinDir || 1) - (k.spinDirE ?? (k.spinDir || 1))) * Math.min(1, DT / 0.2);   // a reversal swings through, it doesn't flip
-      k.spinE = (k.spinE || 0) + (want - (k.spinE || 0)) * Math.min(1, DT / (hands ? 0.05 : want > (k.spinE || 0) ? 0.18 : 0.25));
-      const surge = 1 + 0.3 * Math.sin(1.3 * G.t + (k.swayPh || 0)) + 0.15 * Math.sin(3.1 * G.t + 2 * (k.swayPh || 0));
-      const rate = k.spinDirE * (2.8 + loose * 1.9) * surge * (k.turnMul || 1) * k.spinE * k.spinE * (3 - 2 * k.spinE);
+      const dheelOn = p.ctrl.startsWith('human') ? !!inp.send || slack > 0.5 : slack > 0.3;
+      const want = hands || hooked ? 0 : dheelOn ? (loose > 0.5 ? slack : slack * 0.55) : 0;
+      k.spinE = (k.spinE || 0) + (want - (k.spinE || 0)) * Math.min(1, DT / (hands ? 0.05 : 0.1));
+      const rate = Math.sign(dir) * (1.6 + loose * 6.4) * (k.turnMul || 1) * k.spinE * k.spinE * (3 - 2 * k.spinE);   // smoothstep, as in v7.2
       k.headingAngle += rate * DT;
       if (hands && (k.spinE || 0) > 0.05) k.headingVel = 0;   // stops dead: the nose stays exactly where it was
       if (k.spinE > 0.15) k.headingVel *= Math.exp(-3 * DT);   // while it's turning by itself, the old steer momentum fades
@@ -2833,16 +2828,13 @@
     a.pv += (90 * (pT - a.p) - 9 * a.pv) * dt; a.p += a.pv * dt;
     a.zv += (60 * (n2 * 0.09 * loose - a.z) - 8 * a.zv) * dt; a.z += a.zv * dt;   // a small rock in the picture plane
     a.flT += dt * (9 + 6 * load);
-    /* v7.4 GHOOMNA IN 3D, as in the reference video: a patang spinning on slack line hangs tipped back on its line, and
-     * that tilt stays put in the sky while the kite turns round underneath it - so as it spins you see it from every side
-     * in turn (narrow one moment, full face the next). In the kite's own frame the tilt axis therefore turns against the
-     * spin (-bodyAngle). Rigid: the whole kite tilts, nothing bends. */
-    const spinV = free ? 0 : clamp(Math.max(k.idleE || 0, k.spinE || 0), 0, 1), tilt = spinV * (0.42 + 0.12 * Math.sin(0.9 * t + ph)), ax = -(k.bodyAngle || 0) + ph;
-    a.roll = a.r + tilt * Math.sin(ax); a.pitch = (k.incl || 0) + clamp(a.p, -0.15, 0.15) + tilt * 0.8 * Math.cos(ax) + spinV * 0.12;
+    // turning on dheel, the sail rocks gently onto its edge (v7.2)
+    const spinV = free ? 0 : clamp(Math.max(k.idleE || 0, k.spinE || 0), 0, 1);
+    a.roll = a.r + spinV * 0.14 * Math.sin(t * 2.3 + ph); a.pitch = (k.incl || 0) + clamp(a.p, -0.15, 0.15) + spinV * 0.12;
     a.rot = clamp(a.z, -0.13, 0.13);
-    // v7.4 RIGID SAIL: the reference kite never bends or ripples - it is one stiff plane that tilts. Players found our
-    // bowed, fluttering paper "disturbed" on tunka, khainch, fly and steering, so the bend and flutter are gone.
-    a.bow = 0; a.flA = 0;
+    // v7.5: just a little bend on the wings (the kaman bowing back in the wind), steady - no ripple or flutter
+    a.bow = free ? 0.04 : 0.05 + 0.025 * load;
+    a.flA = 0;
     return a;
   }
   /* draw the picture as a bowed sail. W,H: drawn size; x0,y0: its top-left in the kite's own (rotated) frame;

@@ -20,6 +20,10 @@ export default {
   name: 'UpdatesPage',
   setup() {
     const releases = [
+      { v: '7.5', title: 'Smooth ghoomna, a little bow', changes: [
+        'On DHEEL your patang spins smoothly and evenly again, one way round, as in 7.2. FLY, tunka or khainch still stop it dead, nose steady.',
+        'The wings bow back a little in the wind, steady, with no ripple.'
+      ] },
       { v: '7.4', title: 'Ghoomna like the real thing', changes: [
         'Give DHEEL and your patang now spins the way a real one does: never perfectly even, now and then the other way, and tipping in 3D as it turns. Press FLY or tunka and it stops dead, nose steady, and flies that way.',
         'The kite is a stiff, flat sail again: no more bending or rippling on tunka, khainch, fly or steering.',

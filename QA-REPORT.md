@@ -1,3 +1,17 @@
+# v7.5 SQA (smooth v7.2 dheel spin, light wing bow)
+
+| Check | Result |
+|---|---|
+| UI suite: web computer / web phone / Android app bundle | **28/28**, **28/28**, **27/27** |
+| Online host + friend | **10/10** |
+| `npm test` / physics checks | **121/121**, **50/50** |
+| Dheel spin | even ~330 deg/s, one direction (v7.2); phone DHEEL button the same |
+| Fly / tunka / khainch during a spin | stops dead (1-6 deg/s) |
+| No key pressed | 0 deg/s (keyboard and phone) |
+| Wing bow | 0.05-0.07 of the kite's width, steady, no flutter |
+| Beginner hands, 2 min | above 15 m 89%, roof hits 0 |
+| 6 min Hard Festival soak | 86 cuts, 49 loot, 0 errors |
+
 # v7.4 SQA (matched to the player's reference video of 24 Oct)
 
 | Check | Reference video | v7.4 |

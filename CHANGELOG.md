@@ -11,6 +11,14 @@ Doosre naam/logo concepts: `client/assets/brand/concepts/` — `python3 client/t
 `app/` mein poori game ka **offline** phone app hai (Capacitor 8). GitHub par muft banta hai — Android Studio ya Mac ke
 baghair: **`app/README-APP.md`** dekhein (qadam ba qadam). Workflow: `.github/workflows/build-apps.yml`.
 
+## v7.5
+- **Dheel ka ghoomna phir v7.2 jaisa:** v7.4 ka tez-dheema, ulta palatna aur 3D jhukaav player ko "disturbed" laga. Ab
+  dheel par ek hi taraf, ek jaisi raftaar (~330°/s), aaram se shuru aur band; sail sirf halka sa rock (v7.2). v7.4 se rakha:
+  ghoomna sirf dheel par, Fly / tunka / khainch par foran ruk jaata hai (naap: 1–6°/s), pecha mein patang tiki rehti hai,
+  bina button patang tiki (0°/s, keyboard aur phone dono).
+- **Paron (wings) mein halka sa mod:** kaman ka thoda sa peeche mudna (bow 0.05–0.07, v7.2 mein 0.10–0.13), sakht — koi
+  lehar / flutter nahi.
+
 ## v7.4 (player ka naya reference video, 24 Oct)
 - **Ghoomna sirf DHEEL par, video jaisa:** video naapa: dheel par patang ~170–270°/s ghoomti hai, raftaar kabhi tez kabhi
   dheemi, kabhi kabhi ulti taraf, aur 3D mein jhukti hai; kheenchte hi (Fly / tunka / khainch) foran ruk jaati hai, naak
