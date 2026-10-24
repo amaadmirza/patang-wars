@@ -1,3 +1,23 @@
+# v7.6 SQA (late shout, loot coming home, stuck pecha, dheel spin in pecha)
+
+| Check | Before | v7.6 |
+|---|---|---|
+| "Bo kata!" in the app (browser test with a stand-in voice plugin) | live speech; online voices 5-10 s late on phones | shouts recorded at start-up, played in the cut's own frame |
+| Hooked loot kite, hands off | still in the sky after 40 s | home in 5.1 s (khainch 1.5 s) |
+| Festival pechas, Fly held: time stalled under 0.6 m/s | 64%, longest pecha 16.5 s | 0-11%, longest 7 s |
+| Dheel in a pecha | no spin | ~350 deg/s |
+| Game paused after a cut (replay) | ~6 s | none (replay off by default; still in Settings) |
+| Pecha, right move (Festival) | - | 6 won / 3 lost |
+
+| Suite | Result |
+|---|---|
+| UI suite: web computer / web phone / Android app bundle | **28/28**, **28/28**, **27/27** |
+| Online host + friend | **10/10** |
+| `npm test` / physics checks | **121/121**, **50/50** |
+| Native voice plugin (Java) | compiles against stand-in Android/Capacitor classes; real build on GitHub Actions |
+| Busy Hard Festival, own JS per frame (CPU 2x slower) | worst 91 ms, 0 over 100 ms |
+| 6 min Hard Festival soak | 127 cuts, 63 loot, 0 errors |
+
 # v7.5 SQA (smooth v7.2 dheel spin, light wing bow)
 
 | Check | Result |

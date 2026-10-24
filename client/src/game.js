@@ -422,7 +422,7 @@
     { swipe: '<b>Dheel:</b> drag <b>up</b> &#9650; and hold to let line out. A loose patang turns by itself - tap for a tunka when its nose points where you want.', touch: '<b>Dheel:</b> hold <b>DHEEL</b> to let line out. A loose patang turns by itself - tap FLY when its nose points where you want.', text: '<b>Dheel:</b> hold <b>D</b> to let line out. A loose patang starts to turn by itself - tunka when its nose points where you want.', done: c => c.send > 1.5 },
     { swipe: '<b>Khainch:</b> drag <b>far down</b> &#9660;&#9660; to pull the line back in.', touch: '<b>Khainch:</b> hold <b>KHAINCH</b> to pull the line back in.', text: '<b>Khainch:</b> hold <b>A</b> to pull the line back in.', done: c => c.pull > 1.2 },
     { text: '<b>Pecha:</b> fly your line across the bot\'s line. Once hooked, work it: from <b>below</b> hold <b>A</b> (khainch), from <b>on top</b> hold <b>D</b> (dheel) - your card says which you are. Tap <b>&uarr;</b> for a jhatka. A still line gets cut.', touch: '<b>Pecha:</b> fly your line across the bot\'s line. Once hooked, work it: from <b>below</b> hold <b>KHAINCH</b>, from <b>on top</b> hold <b>DHEEL</b> - your card says which you are. Tap <b>FLY</b> for a jhatka. A still line gets cut.', done: c => c.pecha > 2.5, timeout: 60, start: () => { for (const b of G.players) if (b.ctrl === 'bot') b.ai.passive = false; } },
-    { text: 'Cut kites fall as <b>LOOT</b>. Fly your line through one to hook it, then hold <b>A</b> to bring it home for points. Good luck!', done: (c, t) => t > 9 }
+    { text: 'Cut kites fall as <b>LOOT</b>. Fly your line through one to hook it: it comes down your line to your roof (hold <b>A</b> to bring it faster). Good luck!', done: (c, t) => t > 9 }
   ];
   function showTut() {
     const el = $('#tut');
@@ -583,6 +583,13 @@
         k.v[0] += (w[0] / wh) * 4.5 * top * DT; k.v[1] += (w[1] / wh) * 4.5 * top * DT;   // the wind takes it back out of the overhead dead spot
       }
     }
+    // v7.6: the same overhead dead spot IN A PECHA. Holding Fly with the nose up parked a hooked kite right overhead (~75 deg,
+    // where Fly and the wind cancel out) for up to 20 s - "my kite won't move in the pecha". No line is paid out (that
+    // made pechas drag on), but the wind carries it back down the sky to where it has power again.
+    if (inp.thrust && !k.launch && hooked && !inp.pull) {
+      const top = clamp((elev - 1.05) / 0.2, 0, 1);
+      if (top > 0.02) { const w = G.wind.at(k.p, G.t), wh = Math.hypot(w[0], w[1]) || 1; k.v[0] += (w[0] / wh) * 9 * top * DT; k.v[1] += (w[1] / wh) * 9 * top * DT; }
+    }
     // 2) NO NOSE-DIVE INTO THE ROOF. Low down, a flier never keeps flying a kite at the roof: Fly with the nose pointing
     //    down near the roofs turns the dive into a skim across the sky (high up, a dive is still a dive - it's a move).
     const hw0 = Math.atan2(Math.sin(k.headingAngle), Math.cos(k.headingAngle));
@@ -646,10 +653,11 @@
       /* v7.5 GHOOMNA ON DHEEL: the steady, smooth spin of v7.2 (players found v7.4's surging, reversing 3D spin
        * "disturbed") - one direction, an even rate that eases in and out. Kept from v7.4: only while dheel is held (hands
        * still = the kite hovers), the moment you Fly, tunka or khainch it stops dead with the nose where it was, and a
-       * kite hooked in a pecha holds steady. (Bots keep spinning on any slack, as before.) */
+       * (since v7.6) it spins in a pecha too. (Bots keep spinning on any slack, as before.) */
       const hands = !!(inp.thrust || inp.pull || inp.tunka || k.tunkaT > 0.5);
       const dheelOn = p.ctrl.startsWith('human') ? !!inp.send || slack > 0.5 : slack > 0.3;
-      const want = hands || hooked ? 0 : dheelOn ? (loose > 0.5 ? slack : slack * 0.55) : 0;
+      const want = hands ? 0 :   // v7.6: dheel spins it in a pecha too (v7.4/7.5 held a hooked kite still)
+        dheelOn ? (loose > 0.5 ? slack : slack * 0.55) : 0;
       k.spinE = (k.spinE || 0) + (want - (k.spinE || 0)) * Math.min(1, DT / (hands ? 0.05 : 0.1));
       const rate = Math.sign(dir) * (1.6 + loose * 6.4) * (k.turnMul || 1) * k.spinE * k.spinE * (3 - 2 * k.spinE);   // smoothstep, as in v7.2
       k.headingAngle += rate * DT;
@@ -967,7 +975,7 @@
           d.caught = { by: p, kite: k, s: h.s, hook: q.slice() };
           d.v = d.v.map(x => x * 0.5);
           const whose = d.owner === p ? 'their own' : (d.owner ? d.owner.name + "'s" : 'a');
-          if (real(p) || real(d.owner)) note(`${p.name} hooked ${whose} kite`); banner(p, 'HOOKED — PULL IT IN', '#7bdff2', 1.4);
+          if (real(p) || real(d.owner)) note(`${p.name} hooked ${whose} kite`); banner(p, 'HOOKED — BRINGING IT HOME', '#7bdff2', 1.4);
           if (p.ctrl.startsWith('human')) SFX.hooked();
           return;
         }
@@ -983,8 +991,10 @@
     c.len = c.len || 3.2 + Math.random() * 1.6;          // how much of its dor is left between the wrap and the kite
     c.t = (c.t || 0) + DT;
     const reelIn = Math.min(1, Math.max(0, -k.reelRate) / 8);
-    // it slides down by itself only slowly (its weight on a sloping line); a khainch winds it in properly
-    c.s = Math.max(0, c.s - DT * (0.01 + 0.17 * k.pullE + 0.1 * reelIn));
+    // v7.6: it comes home BY ITSELF - sliding down your line, flying off its little tether, in ~5-7 s - and a khainch
+    // still brings it faster. (It used to slide 0.01 of the line a second on its own: without khainch a hooked kite hung
+    // in the sky for over 40 s, which players read as "the looted kite doesn't fly back home".)
+    c.s = Math.max(0, c.s - DT * (0.12 + 0.17 * k.pullE + 0.1 * reelIn));
     const pts = k.linePoints(24), f = c.s * 24, i = Math.min(23, Math.floor(f)), u = f - i;
     const hook = [0, 1, 2].map(a => pts[i][a] + (pts[i + 1][a] - pts[i][a]) * u);
     c.hook = hook;
@@ -3899,7 +3909,10 @@
     canvas.addEventListener('touchend', e => { if (e.touches.length < 2) pd = 0; }); }
   $('#zoomOut').onclick = () => G && zoomAll(1 / 1.15);
   $('#landBtn').onclick = () => G && requestLand(G.viewers[0]);
-  saved.replay = saved.replay !== false; saved.party = saved.party !== false;
+  // v7.6: the slow-motion cut replay paused the match for ~6 s, which players read as the kite "stuck" in the pecha. It is
+  // now OFF unless you switch it on (Settings -> Cut replays); everyone's old setting is reset to off once.
+  if (!saved.rpOff76) { saved.rpOff76 = 1; saved.replay = false; }
+  saved.replay = saved.replay === true; saved.party = saved.party !== false;
   function renderPrefs() {
     $$('#replayPick [data-replay]').forEach(b => b.classList.toggle('on', (b.dataset.replay === 'on') === saved.replay));
     $$('#lootPick [data-loot]').forEach(b => b.classList.toggle('on', b.dataset.loot === (saved.lootcam === 'off' || saved.lootcam === 'large' ? saved.lootcam : 'small')));
@@ -4046,7 +4059,7 @@
   $('#setRename').onclick = () => { if (G) return; closeSettings(); showNameScreen(showMenu); };
   $('#setReset').onclick = () => {
     if (!confirm('Reset every setting to its default? Your coins, kites and records are kept.')) return;
-    Object.assign(saved, { sound: true, music: true, musicVol: 0.6, kiteSound: true, voice: 'ur', party: true, replay: true, lootcam: 'small', touchMode: 'buttons', theme: 'dark', steer: 1, gfx: 'auto', track: 'mix' });
+    Object.assign(saved, { sound: true, music: true, musicVol: 0.6, kiteSound: true, voice: 'ur', party: true, replay: false, lootcam: 'small', touchMode: 'buttons', theme: 'dark', steer: 1, gfx: 'auto', track: 'mix' });
     delete saved.touchLayout; save();
     SFX.setEnabled(true); SFX.setMusicVolume(saved.musicVol); SFX.setKiteSound(true); SFX.setVoice(saved.voice);
     applyGfx(); applyMusic(); applyTouchLayout(); renderSettings(); renderMusicPanel();

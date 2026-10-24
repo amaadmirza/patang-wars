@@ -120,7 +120,12 @@
       const relN = dot(sub(vAc, vBc), n) * st.side;
       const dvn = clamp(cfg.hookDamp * Math.max(0, -relN) + cfg.hookK * Math.min(Math.max(0, pen), 4), 0, cfg.hookMax) * dt;
       if (dvn > 0) {
-        const mA = A.virtualMass, mB = B.virtualMass, wA = mB / (mA + mB), wB = mA / (mA + mB);
+        const mA = A.virtualMass, mB = B.virtualMass;
+        // v7.6: a kite that is being FLOWN (Fly held, or steered) drags the other line along instead of being braked by it
+        // - players found their kite "won't move" in a pecha: with Fly held it spent up to 40% of the fight under 0.6 m/s.
+        const drv = K => clamp((K.thrustRamp || 0) + Math.abs(K.headingVel || 0) / 6, 0, 1), gA = drv(A), gB = drv(B);
+        let wA = mB / (mA + mB), wB = mA / (mA + mB);
+        const shift = 0.7 * (gA * wA - gB * wB); wA -= shift; wB += shift;
         const sideways = (d, dv) => sub(dv, mul(d, dot(dv, d)));
         A.v = add(A.v, sideways(dA, mul(n, st.side * dvn * wA / sA)));
         B.v = add(B.v, sideways(dB, mul(n, -st.side * dvn * wB / sB)));

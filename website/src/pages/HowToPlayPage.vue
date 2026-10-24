@@ -68,7 +68,7 @@
     <section class="hw-sec hw-two" aria-labelledby="hw-loot">
       <div>
         <h2 id="hw-loot">Loot</h2>
-        <p>Cut kites fall trailing string, and in a Festival kites cut over other roofs keep drifting over yours. Sweep your line through a falling kite or its dor and it wraps onto your line: hold KHAINCH to bring it down to your hands.</p>
+        <p>Cut kites fall trailing string, and in a Festival kites cut over other roofs keep drifting over yours. Sweep your line through a falling kite or its dor and it wraps onto your line and comes down it to your hands in a few seconds. Hold KHAINCH to bring it faster.</p>
         <p>Be quick. The street kids snag loose kites with their jhaar sticks, or catch the trailing dor and haul it down hand over hand; the Loot chase window in the corner shows the race. Sweep your line through it while they pull and you can still snatch it.</p>
       </div>
       <figure class="hw-fig">

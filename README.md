@@ -215,6 +215,7 @@ The fastest way to get a change right:
 
 | Version | Main changes |
 |---|---|
+| 7.6 | Instant "Bo kata!" in the app (offline voice + shouts recorded at start-up); hooked loot comes home by itself in ~5 s; no stuck kite overhead in a pecha; dheel spin in pechas; cut replay off by default |
 | 7.5 | Dheel spin back to v7.2's smooth, even, one-way spin (still stops dead on Fly/tunka/khainch, still only on dheel); a light, steady bow on the wings with no ripple |
 | 7.4 | Ghoomna only on dheel, like the reference video (variable speed, reversals, 3D tilt; stops dead on Fly/tunka/khainch); rigid sail (no bending); finer dor with a natural belly and lag; kite steady in a pecha |
 | 7.3 | Kite no longer spins by itself when no key is pressed (hovers nose-up; setting now off by default); fixed the kite freezing overhead on Fly and spinning into the roof after a khainch; less sail tilt |

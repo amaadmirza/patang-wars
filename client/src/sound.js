@@ -46,6 +46,7 @@
       saw = noiseLoop('bandpass', 900, 0.8);   // v6.5: dor rubbing on dor - a soft low rasp (was a narrow 2-3.6 kHz hiss that players found piercing)
       if (pref.music) setMusic(true);
     } catch (e) { ctx = null; }
+    try { nativeTts(); } catch (e) {}   // v7.6: the phone app starts recording the shouts right away, long before the first cut
   }
   const ok = () => ctx && enabled;
   const ramp = (param, v, tc = 0.15) => param.setTargetAtTime(v, ctx.currentTime, tc);
@@ -252,8 +253,38 @@
     const C = root.Capacitor, P = C && C.Plugins && C.Plugins.BoKataVoice;
     if (!P || !(C.isNativePlatform ? C.isNativePlatform() : true)) return null;
     if (!NT.checked) { NT.checked = true; NT.ok = true;
-      try { P.languages().then(r => { NT.langs = r || {}; NT.ok = !!(NT.langs.ur || NT.langs.hi); }).catch(() => { NT.ok = false; }); } catch (e) { NT.ok = false; } }
+      try { P.languages().then(r => { NT.langs = r || {}; NT.ok = !!(NT.langs.ur || NT.langs.hi); if (NT.ok) prepareShouts(); }).catch(() => { NT.ok = false; }); } catch (e) { NT.ok = false; } }
     return NT.ok ? P : null;
+  }
+  /* v7.6 INSTANT SHOUTS on the phone app: "Bo kaata!" was heard 5-10 s after the cut - Google's Urdu/Hindi voices are
+   * often network voices, so every shout waited for a server. Now the phone records each of YOUR shouts once, in the
+   * background at start-up (BoKataVoice.prepare), and the game plays the recording through its own audio the moment
+   * the kite is cut. Until the recordings are ready (or if they fail) the old live speech is used. */
+  const MINE = ['bokata', 'bokatahai', 'wokata', 'wah', 'katgayi', 'oyehoye', 'urrgayi'];
+  const REC = { lang: '', bufs: {}, busy: false };
+  const ntLang = () => pref.voice === 'hi' ? (NT.langs.hi ? 'hi' : 'ur') : (NT.langs.ur ? 'ur' : 'hi');
+  function prepareShouts() {
+    const C = root.Capacitor, P = C && C.Plugins && C.Plugins.BoKataVoice;
+    if (!P || !P.prepare || pref.voice === 'off' || REC.busy || !(NT.langs.ur || NT.langs.hi)) return;
+    const l = ntLang(); if (REC.lang === l && Object.keys(REC.bufs).length) return;
+    REC.busy = true; REC.lang = l; REC.bufs = {};
+    try {
+      P.prepare({ lang: l === 'ur' ? 'ur-PK' : 'hi-IN', phrases: MINE.map(key => ({ key, text: PH[key][l] })) }).then(r => {
+        REC.busy = false; if (REC.lang !== l) return prepareShouts();
+        init(); if (!ctx) return;
+        for (const key of Object.keys(r || {})) {
+          try {
+            const bin = atob(r[key]), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+            ctx.decodeAudioData(u8.buffer).then(buf => { if (REC.lang === l) REC.bufs[key] = buf; }, () => {});
+          } catch (e) {}
+        }
+      }).catch(() => { REC.busy = false; });
+    } catch (e) { REC.busy = false; }
+  }
+  function playRec(key, vol) {
+    const buf = REC.lang === ntLang() && REC.bufs[key]; if (!buf || !ok()) return false;
+    const src = ctx.createBufferSource(), g = ctx.createGain(); src.buffer = buf; g.gain.value = Math.min(1, vol) * 1.15;
+    src.connect(g); g.connect(voiceBus()); src.start(ctx.currentTime + 0.01); return true;
   }
   /** what voice the shouts will use, for the settings screen */
   function voiceInfo() {
@@ -270,6 +301,9 @@
     if (far) return fxSay(p.fx, vol, pitch, rate, true);
     const now = ctx.currentTime; if (now - speaking < 0.9) return false; speaking = now;   // one shout at a time
     const nt = nativeTts();
+    if (nt && playRec(key, vol)) return true;   // v7.6: the recording, instantly
+    // ...not recorded yet, and this phone has only an online voice: the built-in voice now beats a shout 5-10 s late
+    if (nt && NT.langs[ntLang() + 'Local'] === false) return fxSay(p.fx, vol, pitch, rate, false);
     if (nt) {
       const l = pref.voice === 'hi' ? (NT.langs.hi ? 'hi' : 'ur') : (NT.langs.ur ? 'ur' : 'hi');
       // natural speed and pitch: changing them makes a recorded voice sound processed
@@ -757,7 +791,7 @@
   const setStyle = setTrack;   // old name
   function setMusicVolume(v) { pref.musicVol = Math.max(0, Math.min(1, v)); if (ctx) ramp(musicBus.gain, musicLevel(), 0.1); if (songEl) songEl.volume = Math.min(1, pref.musicVol * 0.9 * duck); }
   function setKiteSound(on) { pref.kite = !!on; if (ctx) ramp(kiteBus.gain, pref.kite ? 1 : 0, 0.1); }
-  function setVoice(v) { pref.voice = v === 'hi' || v === 'off' ? v : 'ur'; }
+  function setVoice(v) { pref.voice = v === 'hi' || v === 'off' ? v : 'ur'; if (NT.ok && NT.checked) prepareShouts(); }
   /** keeps the music going on the menus too (the game's own update() only runs during a match) */
   function menuTick() { if (ctx && pref.music && enabled) musicTick(); }
   const unlocked = () => !!ctx && ctx.state === 'running';

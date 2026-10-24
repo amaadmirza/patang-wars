@@ -114,7 +114,7 @@ export default {
       { title: 'Hook', text: 'Fly your line across a rival\'s. From above or below, the two strings catch and the pecha starts.' },
       { title: 'Work the line', text: 'From on top, let line out with DHEEL. From below, pull it in with KHAINCH. A quick tap of FLY is a jhatka: one hard saw.' },
       { title: 'Cut', text: 'A still line loses. When their dor parts, the whole street hears it: bo kata!' },
-      { title: 'Loot', text: 'The cut kite drifts down trailing string. Sweep your line through it and reel it home before the street kids grab it.' }
+      { title: 'Loot', text: 'The cut kite drifts down trailing string. Sweep your line through it and it comes down your line to your roof, before the street kids grab it.' }
     ];
     const modes = [
       { name: 'Festival', text: 'Up to ten kites over the roofs, everyone against everyone, cut kites drifting over your head to loot.' },

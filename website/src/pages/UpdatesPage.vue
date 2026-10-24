@@ -20,6 +20,12 @@ export default {
   name: 'UpdatesPage',
   setup() {
     const releases = [
+      { v: '7.6', title: 'Bo kata, right on time', changes: [
+        '"Bo kata!" is shouted the instant the kite is cut. On some phones the voice came 5-10 seconds late; the game now records its shouts when it starts, so they play at once.',
+        'A kite you hook now comes down your line to your roof by itself in a few seconds. Khainch still brings it faster.',
+        'In a pecha your kite no longer gets stuck right overhead, and DHEEL spins it there too.',
+        'The slow-motion replay after a cut is now off (it paused the game). Switch it on in Settings if you like it.'
+      ] },
       { v: '7.5', title: 'Smooth ghoomna, a little bow', changes: [
         'On DHEEL your patang spins smoothly and evenly again, one way round, as in 7.2. FLY, tunka or khainch still stop it dead, nose steady.',
         'The wings bow back a little in the wind, steady, with no ripple.'

@@ -11,6 +11,22 @@ Doosre naam/logo concepts: `client/assets/brand/concepts/` — `python3 client/t
 `app/` mein poori game ka **offline** phone app hai (Capacitor 8). GitHub par muft banta hai — Android Studio ya Mac ke
 baghair: **`app/README-APP.md`** dekhein (qadam ba qadam). Workflow: `.github/workflows/build-apps.yml`.
 
+## v7.6
+- **"Bo kata!" der se (5–10 s) bolta tha (Android app):** Google ki Urdu/Hindi aawazein aksar *online* hoti hain — har shout
+  server ka intezar karta tha. Ab app (1) phone par mojood offline aawaz chunti hai, aur (2) shuru mein hi apne saare shouts
+  ek dafa record kar leti hai (BoKataVoice.prepare → WAV) aur kat ke lamhe game ki apni audio se foran bajati hai. Jab tak
+  recording tayyar na ho: offline aawaz ho to wohi, sirf online aawaz ho to game ki apni rooftop aawaz (foran) — der kabhi
+  nahi. Test (nakli plugin ke saath browser mein): kat → recording usi frame mein.
+- **Loot ki patang ghar wapas nahi aati thi:** phansi hui patang apne aap dor par sirf 0.01/s neeche aati thi — bina
+  khainch 40 s baad bhi aasmaan mein. Ab apne aap ~5 s mein chhat tak (khainch se aur tez). Banner: "HOOKED — BRINGING IT HOME".
+- **Pecha mein patang atak jaati thi:** do wajahein. (1) Kat ke baad slow-motion REPLAY game ko ~6 s rokta tha — ab replay
+  default **off** (Settings mein on kar sakte hain; sab ka purana setting ek dafa off). (2) Pecha mein Fly dabane par naak
+  upar wali patang sar ke oopar (~75°) jaa kar ruk jaati thi (Fly aur hawa barabar) — 15–20 s tak. Ab pecha mein bhi hawa
+  use wapas bahar le aati hai (dor nahi chhorti, warna pecha lamba ho jata). Festival naap (Fly dabaye): pecha ka atka waqt
+  64% → 0–11%, sab se lamba pecha 16.5 s → 7 s. Aur jo patang udayi ja rahi ho (Fly/steer) woh doosri dor ko saath
+  ghaseet-ti hai, khud nahi rukti.
+- **Pecha mein dheel par ghoomna:** v7.4/7.5 mein phansi patang dheel par nahi ghoomti thi — ab ghoomti hai (~350°/s).
+
 ## v7.5
 - **Dheel ka ghoomna phir v7.2 jaisa:** v7.4 ka tez-dheema, ulta palatna aur 3D jhukaav player ko "disturbed" laga. Ab
   dheel par ek hi taraf, ek jaisi raftaar (~330°/s), aaram se shuru aur band; sail sirf halka sa rock (v7.2). v7.4 se rakha:
