@@ -11,6 +11,20 @@ Doosre naam/logo concepts: `client/assets/brand/concepts/` — `python3 client/t
 `app/` mein poori game ka **offline** phone app hai (Capacitor 8). GitHub par muft banta hai — Android Studio ya Mac ke
 baghair: **`app/README-APP.md`** dekhein (qadam ba qadam). Workflow: `.github/workflows/build-apps.yml`.
 
+## v7.4 (player ka naya reference video, 24 Oct)
+- **Ghoomna sirf DHEEL par, video jaisa:** video naapa: dheel par patang ~170–270°/s ghoomti hai, raftaar kabhi tez kabhi
+  dheemi, kabhi kabhi ulti taraf, aur 3D mein jhukti hai; kheenchte hi (Fly / tunka / khainch) foran ruk jaati hai, naak
+  wahin. Ab hamari patang bhi: dheel par ~225–250°/s, surge, beech beech mein ulti taraf (aaram se, jhatke se nahi), ghoomte
+  waqt aasmaan mein ek jagah tika hua jhukaav (har taraf se dikhti hai). Fly dabate hi ghoomna ~0.05 s mein band (naap: Fly
+  ke dauran 5°/s). Koi button nahi = patang tiki rehti hai (v7.3 jaisa). Pecha mein phansi patang dheel par nahi ghoomti.
+- **Sail ab sakht (rigid), mudta nahi:** video ki patang kabhi mudti ya lehraati nahi — sirf poori ki poori jhukti hai. Ab
+  kaman ka bend aur flutter khatam; sirf seedhi 3D jhuk. (Ek chhota bug bhi: v7.3 mein ek comment ne sail ka halka rock
+  band kar diya tha — theek.)
+- **Dor video jaisi:** patli (apni 1.6 → 1.25), aur tight dor mein bhi naram jhol; patang hilti hai to dor ka beech peeche
+  reh kar mudta hai.
+- Naap: dheel 251°/s, Fly 5°/s, bina button 0°/s; beginner test 15 m se upar 96%, chhat se takkar 0; pecha sahi chaal
+  ~55% jeet (v7.3 jitna), ruk kar rehna 1/6.
+
 ## v7.3
 - **Bina button dabaye patang ab khud nahi ghoomti:** v7.1 ka "idle ghoomna" (chhorne par patang ~200°/s ghoomti thi,
   6 s mein 3.5 chakkar) patang ka rukh kahin bhi chhor deta tha, aur agla Fly use ghalat taraf ya chhat mein bhej deta tha.

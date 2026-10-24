@@ -1,3 +1,23 @@
+# v7.4 SQA (matched to the player's reference video of 24 Oct)
+
+| Check | Reference video | v7.4 |
+|---|---|---|
+| Spin on dheel | ~170-270 deg/s, uneven, sometimes reverses, tilts in 3D | 225-251 deg/s, surging, eased reversals, 3D tilt (phone DHEEL button: 234 deg/s) |
+| Spin while pulling (Fly / tunka / khainch) | stops dead (0-10 deg/s) | 1-5 deg/s |
+| No key pressed | (player's choice) hover | 0 deg/s on keyboard and phone buttons |
+| Sail | rigid, never bends | rigid: bow and flutter 0 |
+| Dor | fine, soft belly, bends as the kite moves | finer line, belly + lag bend |
+
+| Suite | Result |
+|---|---|
+| UI suite: web computer / web phone / Android app bundle | **28/28**, **28/28**, **27/27** |
+| Online host + friend | **10/10** |
+| `npm test` / physics checks | **121/121**, **50/50** |
+| Beginner hands, 2.5 min | above 15 m **96%**, median 44 m, roof hits **0** |
+| Pecha, real keys vs Normal bot (several runs) | right move ~55% of decided pechas (v7.3 54%); hold still 1 won / 6 lost |
+| Busy Hard Festival, own JS per frame (CPU 2x slower) | worst 91 ms, 0 over 100 ms |
+| 6 min Hard Festival soak | 94 cuts, 37 loot, 0 errors |
+
 # v7.3 SQA (idle rotation, flying, sail, pecha)
 
 | Check | Result |

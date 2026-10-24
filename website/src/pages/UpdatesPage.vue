@@ -20,6 +20,12 @@ export default {
   name: 'UpdatesPage',
   setup() {
     const releases = [
+      { v: '7.4', title: 'Ghoomna like the real thing', changes: [
+        'Give DHEEL and your patang now spins the way a real one does: never perfectly even, now and then the other way, and tipping in 3D as it turns. Press FLY or tunka and it stops dead, nose steady, and flies that way.',
+        'The kite is a stiff, flat sail again: no more bending or rippling on tunka, khainch, fly or steering.',
+        'The dor is finer and hangs in a natural curve, bending behind the kite as it moves.',
+        'In a pecha your kite holds steady while the dor does the cutting.'
+      ] },
       { v: '7.3', title: 'A kite that listens', changes: [
         'Let go and your kite now settles nose-up into a steady hover, instead of spinning round and round. Fly goes where you point it.',
         'Holding FLY right overhead no longer freezes the kite in mid-air: it climbs and the wind carries it back out.',

@@ -1,7 +1,7 @@
 {
   "name": "patang-wars-app",
   "private": true,
-  "version": "1.7.3",
+  "version": "1.7.4",
   "description": "Bo Kata! for Android and iPhone (Capacitor). The whole game runs inside the app, offline.",
   "scripts": {
     "www": "node ../build.js --app",

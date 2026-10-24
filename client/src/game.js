@@ -643,12 +643,22 @@
       k.headingAngle -= 2 * Math.sin(hw / 2) * (0.7 + 2.6 * stab) * right * still * DT;   // strongest when upside down, so it never just dives in
       // an off-centre kanni keeps leaning it to one side, most of all on slack line
       if (lean) k.headingAngle += 0.55 * (0.15 + 0.85 * slack) * Math.sign(lean) * DT;
-      // GHOOMNA on dheel: on slack line a loose patang turns slowly and STEADILY (about a turn every 5-6 s), so you can
-      // tunka the moment its nose points where you want. The rate eases in and out smoothly - no jerks.
-      const want = loose > 0.5 ? slack : slack * 0.55;
-      k.spinE = (k.spinE || 0) + (want - (k.spinE || 0)) * Math.min(1, DT / 0.1);
-      const rate = Math.sign(dir) * (1.6 + loose * 6.4) * (k.turnMul || 1) * k.spinE * k.spinE * (3 - 2 * k.spinE);   // smoothstep; v6: a patang now spins about once a second on dheel (was once every ~2 s - too slow)
+      /* v7.4 GHOOMNA ON DHEEL, measured from the player's reference video (WhatsApp 24 Oct): while line is let out the
+       * patang spins by itself at ~170-270 deg/s - never perfectly even (it surges and eases), now and then reversing - and
+       * the moment the flier pulls (Fly, tunka or khainch) it stops DEAD with its nose where it was, and flies that way.
+       * Only on dheel: with the hands still the kite hovers nose-up. (Bots keep spinning on any slack, as before.) */
+      const hands = !!(inp.thrust || inp.pull || inp.tunka || k.tunkaT > 0.5);
+      const dheelOn = p.ctrl.startsWith('human') ? !!inp.send : slack > 0.3;
+      // hooked in a pecha the dor is loaded across the other line: the kite holds its place while the line does the work
+      const want = hands || hooked ? 0 : dheelOn ? (loose > 0.5 ? 1 : 0.55) : 0;
+      if (want > 0 && (k.spinE || 0) < 0.05) { k.spinDir = Math.sign(dir) || 1; k.spinDirE = k.spinDir; k.revT = 1.5 + Math.random() * 3; }   // a new spin
+      if ((k.spinE || 0) > 0.3 && (k.revT -= DT) <= 0) { if (Math.random() < 0.45) k.spinDir = -(k.spinDir || 1); k.revT = 1.5 + Math.random() * 3; }   // now and then the other way
+      k.spinDirE = (k.spinDirE ?? (k.spinDir || 1)) + ((k.spinDir || 1) - (k.spinDirE ?? (k.spinDir || 1))) * Math.min(1, DT / 0.2);   // a reversal swings through, it doesn't flip
+      k.spinE = (k.spinE || 0) + (want - (k.spinE || 0)) * Math.min(1, DT / (hands ? 0.05 : want > (k.spinE || 0) ? 0.18 : 0.25));
+      const surge = 1 + 0.3 * Math.sin(1.3 * G.t + (k.swayPh || 0)) + 0.15 * Math.sin(3.1 * G.t + 2 * (k.swayPh || 0));
+      const rate = k.spinDirE * (2.8 + loose * 1.9) * surge * (k.turnMul || 1) * k.spinE * k.spinE * (3 - 2 * k.spinE);
       k.headingAngle += rate * DT;
+      if (hands && (k.spinE || 0) > 0.05) k.headingVel = 0;   // stops dead: the nose stays exactly where it was
       if (k.spinE > 0.15) k.headingVel *= Math.exp(-3 * DT);   // while it's turning by itself, the old steer momentum fades
     } else { k.spinE = (k.spinE || 0) * Math.exp(-DT / 0.2); k.idleE = 0; k.idleT = 0; kiteTakeAim(k); }
     if (k.launch) {
@@ -2823,11 +2833,16 @@
     a.pv += (90 * (pT - a.p) - 9 * a.pv) * dt; a.p += a.pv * dt;
     a.zv += (60 * (n2 * 0.09 * loose - a.z) - 8 * a.zv) * dt; a.z += a.zv * dt;   // a small rock in the picture plane
     a.flT += dt * (9 + 6 * load);
-    // turning on its own (idle ghoomna or dheel), the sail tips back and rocks onto its edge, as in the reference video
-    const spinV = free ? 0 : clamp(Math.max(k.idleE || 0, k.spinE || 0), 0, 1);
-    a.roll = a.r + spinV * 0.08 * Math.sin(t * 2.3 + ph); a.pitch = (k.incl || 0) + clamp(a.p, -0.15, 0.15) + spinV * 0.07;   // v7.3: a spinning kite stays a kite, not a tumbling box a.rot = clamp(a.z, -0.13, 0.13);
-    a.bow = free ? 0.07 : 0.1 + 0.05 * load + 0.006 * Math.sin(8.5 * t + ph) * load;
-    a.flA = 0.012 + 0.012 * load + (free ? 0.012 : 0);
+    /* v7.4 GHOOMNA IN 3D, as in the reference video: a patang spinning on slack line hangs tipped back on its line, and
+     * that tilt stays put in the sky while the kite turns round underneath it - so as it spins you see it from every side
+     * in turn (narrow one moment, full face the next). In the kite's own frame the tilt axis therefore turns against the
+     * spin (-bodyAngle). Rigid: the whole kite tilts, nothing bends. */
+    const spinV = free ? 0 : clamp(Math.max(k.idleE || 0, k.spinE || 0), 0, 1), tilt = spinV * (0.42 + 0.12 * Math.sin(0.9 * t + ph)), ax = -(k.bodyAngle || 0) + ph;
+    a.roll = a.r + tilt * Math.sin(ax); a.pitch = (k.incl || 0) + clamp(a.p, -0.15, 0.15) + tilt * 0.8 * Math.cos(ax) + spinV * 0.12;
+    a.rot = clamp(a.z, -0.13, 0.13);
+    // v7.4 RIGID SAIL: the reference kite never bends or ripples - it is one stiff plane that tilts. Players found our
+    // bowed, fluttering paper "disturbed" on tunka, khainch, fly and steering, so the bend and flutter are gone.
+    a.bow = 0; a.flA = 0;
     return a;
   }
   /* draw the picture as a bowed sail. W,H: drawn size; x0,y0: its top-left in the kite's own (rotated) frame;
@@ -2836,7 +2851,8 @@
   function drawSail(im, W, H, x0, y0, cx, cy, att, devPx) {
     if (KF_DEBUG && !im._seenDraw) { im._seenDraw = 1; dbgEv('firstDraw'); }
     const src = kiteMip(im, devPx) || im, SW = src.naturalWidth || src.width, SH = src.naturalHeight || src.height;
-    const cols = devPx < 28 ? 1 : devPx < 64 ? 4 : devPx < 130 ? 6 : 8, rows = devPx < 28 ? 1 : devPx < 100 ? 2 : 3;
+    // v7.4: the sail is a flat, rigid plane now - a few cells are enough for its perspective (no bend to follow)
+    const flat = !att.bow && !att.flA, cols = devPx < 28 ? 1 : flat ? (devPx < 100 ? 2 : 4) : devPx < 64 ? 4 : devPx < 130 ? 6 : 8, rows = devPx < 28 ? 1 : flat ? 2 : devPx < 100 ? 2 : 3;
     const cp = Math.cos(att.pitch), sp = Math.sin(att.pitch), cr = Math.cos(att.roll), sr = Math.sin(att.roll), f = Math.max(W, H) * 4.5;
     const bow = cols > 1 ? att.bow * W : 0, flA = cols > 1 ? att.flA * W : 0, flT = att.flT;
     const P = (u, v) => {
@@ -3064,9 +3080,19 @@
     const pts = k.linePoints(24), a = k.anchor, b = k.p;
     const dist = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) || 1, slack = Math.max(0, k.lineLen - dist);
     const extra = Math.min(dist * 0.085, Math.sqrt(dist * slack) * 0.16) * clamp(1 - (k.pullE || 0), 0, 1);
-    k._droop = (k._droop || 0) + (extra - (k._droop || 0)) * 0.12;   // eases in and out, never snaps
-    const dr = k._droop; if (dr < 0.05) return pts;
-    for (let i = 1; i < pts.length - 1; i++) { const s = i / (pts.length - 1), w = 6.75 * s * (1 - s) * (1 - s); pts[i][2] -= dr * w; }
+    // v7.4: like the reference video, even a tight dor keeps a soft belly (its own weight over a long run)...
+    const belly = dist * 0.028 * clamp(1 - 0.6 * (k.pullE || 0), 0.4, 1);
+    k._droop = (k._droop || 0) + (extra + belly - (k._droop || 0)) * 0.12;   // eases in and out, never snaps
+    const dr = k._droop;
+    // ...and when the kite moves across the sky the line can't keep up: its middle trails behind and the dor bends
+    const v = k.v || [0, 0, 0], L = [(b[0] - a[0]) / dist, (b[1] - a[1]) / dist, (b[2] - a[2]) / dist], vr = v[0] * L[0] + v[1] * L[1] + v[2] * L[2];
+    const lag = k._lag || (k._lag = [0, 0, 0]), cap = dist * 0.1;
+    for (let c = 0; c < 3; c++) lag[c] += (-(v[c] - vr * L[c]) * 0.16 - lag[c]) * 0.1;
+    const lm = Math.hypot(lag[0], lag[1], lag[2]), ls = lm > cap ? cap / lm : 1;
+    for (let i = 1; i < pts.length - 1; i++) {
+      const s = i / (pts.length - 1), w = 6.75 * s * (1 - s) * (1 - s), wl = 3.1 * s * Math.sqrt(s) * (1 - s);
+      pts[i][2] -= dr * w; pts[i][0] += lag[0] * ls * wl; pts[i][1] += lag[1] * ls * wl; pts[i][2] += lag[2] * ls * wl;
+    }
     return pts;
   }
   function drawViewport(vp, viewer, dt) {
@@ -3091,7 +3117,7 @@
         const hand = viewer._hands && viewer._hands.get(p), gm = kiteGeom(cam, k, pts), knot = gm && gm.px > 6 && gm.cut >= 0 ? { ...gm.knot, i: gm.cut } : null;
         const night = G.sc.nightDrawn || G.sc.night;
         items.push({ k: 'line', d: k.p[0] + 1, f: () => { if (night && !QUAL.low) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; polyline(cam, pts, k.thread.color, own ? 5 : 3.5, 0.16, hand, knot); ctx.restore(); }
-          const inMine = pd && (own || k._pechaDraw.some(d => mine(d.other.owner))), lw = (own ? 1.6 : 1.1) * (inMine ? 1.1 : 1);   // v6.5: barely thicker in a pecha (1.7x was too heavy)
+          const inMine = pd && (own || k._pechaDraw.some(d => mine(d.other.owner))), lw = (own ? 1.25 : 0.9) * (inMine ? 1.15 : 1);   // v7.4: a finer dor, as in the reference   // v6.5: barely thicker in a pecha (1.7x was too heavy)
           // in YOUR pecha the two dor must never be confused (both are often red/pink manjha): yours has a white edge,
           // theirs a dark one
           if (inMine) polyline(cam, pts, own ? 'rgba(255,255,255,.8)' : 'rgba(10,12,24,.6)', lw + 1.1, own ? 0.6 : 0.5, hand, knot);   // a slim edge, just enough to tell yours from theirs
