@@ -215,6 +215,7 @@ The fastest way to get a change right:
 
 | Version | Main changes |
 |---|---|
+| 7.2 | Kite keeps its shape on tunka, khainch and steering (sail roll 52° → 16°); no more stalls in pechas (worst frame 516 → 82 ms); website rewritten for kite lovers with a Basant page and patang dictionary |
 | 7.1 | Kite turns by itself when left alone (measured from the reference video); bowed 3D paper sails, bank, rock, flutter, line droop; zoom slider on the left; smoother pechas and sharper phone graphics; no jerk after the splash; retired the Saudi flag kite and the Pipa/Raia/Dabba/Parinda/Sitara kites (full refunds); Vue website; full SQA |
 | 7.0 | New name Bo Kata!, smaller loot window, real pause menu on phones, faster phone menus, clean shout voice |
 | 6.5 | Softer pecha sound, thinner lines, max 3 lines in a tangle, phone zoom |

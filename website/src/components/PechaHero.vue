@@ -8,10 +8,11 @@
         </h1>
         <p class="ph-sub">Fly your patang off a Lahore rooftop, hook a rival's line in a pecha, and work your manjha until theirs snaps.</p>
         <div class="ph-cta">
-          <a class="btn" :href="config.playUrl">Play in your browser</a>
-          <router-link class="btn btn-quiet" to="/download">Get the Android app</router-link>
+          <a class="btn" :href="config.apkUrl">Download for Android</a>
+          <a v-if="config.playUrl" class="btn btn-quiet" :href="config.playUrl">Play in your browser</a>
+          <router-link v-else class="btn btn-quiet" to="/basant">What is Basant?</router-link>
         </div>
-        <p class="ph-facts">{{ counts.kites }} kites to collect, {{ counts.scenes }} skies to fly in, free to play offline.</p>
+        <p class="ph-facts">{{ counts.kites }} kites to collect, {{ counts.scenes }} skies from Lahore to Karachi, free, and it plays offline.</p>
       </div>
     </div>
     <div ref="tryEl" class="ph-try">

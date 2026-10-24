@@ -47,6 +47,22 @@
       </div>
     </section>
 
+    <section class="hp-basant" aria-labelledby="hp-basant-h">
+      <div class="wrap hp-basant-row">
+        <div>
+          <h2 id="hp-basant-h">Basant, on your screen</h2>
+          <p>The yellow kurtas, the dhol on the next roof, the street kids with their jhaar, and that shout from three chhats away. Every word in the game comes from the roof.</p>
+          <router-link class="btn btn-quiet" to="/basant">The patang dictionary</router-link>
+        </div>
+        <dl class="hp-words">
+          <div><dt>Pecha</dt><dd>Two strings crossed, sawing until one parts.</dd></div>
+          <div><dt>Dheel</dt><dd>Give line. From on top, it cuts.</dd></div>
+          <div><dt>Khainch</dt><dd>Pull in, hand over hand. From below, it cuts.</dd></div>
+          <div><dt>Kati patang</dt><dd>A cut kite, free for whoever catches it.</dd></div>
+        </dl>
+      </div>
+    </section>
+
     <section class="section hp-modes" aria-labelledby="hp-modes-h">
       <div class="wrap hp-modes-grid">
         <div>
@@ -67,11 +83,11 @@
       <div class="wrap hp-go-row">
         <div>
           <h2 id="hp-go-h">The wind is right</h2>
-          <p>Play in the browser on a computer or phone, or install the Android app and fly offline.</p>
+          <p>Free, no ads, and it flies offline on your Android phone.</p>
         </div>
         <div class="hp-go-cta">
-          <a class="btn" :href="config.playUrl">Play in your browser</a>
-          <router-link class="btn btn-quiet" to="/download">Android app and servers</router-link>
+          <a class="btn" :href="config.apkUrl">Download for Android</a>
+          <router-link class="btn btn-quiet" to="/basant">Read about Basant</router-link>
         </div>
       </div>
     </section>
@@ -105,7 +121,7 @@ export default {
       { name: 'Duel', text: 'You and one bot, one pecha at a time. The cleanest way to learn upar and neeche.' },
       { name: 'Two players', text: 'Split screen on one computer: one on the arrows, one on WASD.' },
       { name: 'Mohalla', text: 'Team fights, 2 vs 2 or 3 vs 3. Your team\'s strings never cut each other. Beat six neighbourhoods.' },
-      { name: 'Online', text: 'Rooms for up to ten friends on your own server. The server decides every cut, so nobody can cheat.' }
+      { name: 'Online', text: 'A room for up to ten friends: share the invite link on WhatsApp and fight on one sky.' }
     ];
     return { rack, steps, modes, counts: game.counts, config };
   }
@@ -152,6 +168,16 @@ export default {
 .hp-modes-list dd { margin: 0; color: var(--text-soft); }
 @media (max-width: 760px) { .hp-modes-grid { grid-template-columns: 1fr; } .hp-modes-list > div { grid-template-columns: 1fr; gap: 2px; } }
 
+.hp-basant { background: var(--genda); color: var(--jamun); padding: clamp(36px, 5vw, 64px) 0; }
+.hp-basant-row { display: grid; grid-template-columns: 1fr 1.1fr; gap: clamp(20px, 4vw, 56px); align-items: center; }
+.hp-basant p { max-width: 46ch; }
+.hp-basant .btn-quiet { color: var(--jamun); }
+.hp-words { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.hp-words > div { padding: 14px 16px; border-radius: var(--radius-m); background: rgba(255, 255, 255, 0.55); }
+.hp-words dt { font-family: var(--display); font-weight: 800; font-size: var(--t-lg); }
+.hp-words dd { margin: 2px 0 0; font-size: 0.98rem; }
+@media (max-width: 760px) { .hp-basant-row { grid-template-columns: 1fr; } }
+@media (max-width: 420px) { .hp-words { grid-template-columns: 1fr; } }
 .hp-go { background: var(--sky); color: #fff; padding: clamp(40px, 6vw, 72px) 0; }
 .hp-go-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; }
 .hp-go h2 { margin-bottom: 6px; }

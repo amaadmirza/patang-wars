@@ -11,6 +11,22 @@ Doosre naam/logo concepts: `client/assets/brand/concepts/` — `python3 client/t
 `app/` mein poori game ka **offline** phone app hai (Capacitor 8). GitHub par muft banta hai — Android Studio ya Mac ke
 baghair: **`app/README-APP.md`** dekhein (qadam ba qadam). Workflow: `.github/workflows/build-apps.yml`.
 
+## v7.2
+- **Patang ki shakal ab saaf rehti hai (tunka, khainch, left/right):** paper sail bohot zyada mudta aur ghoomta tha.
+  - steer par sail ka jhukaav (roll) pehle 52° tak jata tha, ab zyada se zyada ~16°; khainch par kaman ka bend 0.28 se 0.15.
+  - tunka ka jhoola 0.45 se 0.28; perspective kam (door ka camera), shade 0.3 tak; flutter aadha.
+  - patang ab bhi bank karti, jhoolti aur ghoomti hai, lekin shakal patang hi rehti hai.
+- **Udte waqt aur pecha mein atakna (stuck) khatam:** har frame ka khud ka JS waqt naapa (phone size, CPU 2x dheema):
+  - sab se bura frame 516 ms se 82 ms; 100 ms se lambe frame 14 se 0; p99 92 ms se 33 ms; 10 ms se lambe GC 32 se 10–15.
+  - wajahein: pecha zoom mein apne flier ki tasveer har frame dobara banti thi; loot wale bachche har frame poore
+    banaye jaate the (365 ms tak); replay recorder bohot kachra (garbage) banata tha; nayi patang ki pehli tasveer
+    (decode + mipmaps) beech match mein banti thi; HUD ka box-shadow animation game ke upar repaint karta tha.
+  - ilaaj: tasveer cache ka har frame budget, bachche bhi sprite se, recorder ring buffers (kachra nahi), patangein match
+    se pehle garam (warm) ki jaati hain, loot patangon ka pool, HUD animation sirf opacity.
+- **Website kite lovers ke liye:** naya Basant safha (chhat ka din, pecha kaise jeette hain, patang ke hisse, 18 lafzon
+  ki patang dictionary, hifazat), Download safha sirf players ke liye (install ke 4 qadam), FAQ dobara likha, How to play
+  mein "Ustad tips". Developer / GitHub / server wali baatein website se hata di (README mein hain).
+
 ## v7.1
 - **Splash ke baad jhatka khatam:** tap par game full screen + landscape maangti thi aur usi pal home screen banti aur fade
   hoti — screen ka size badalta (aksar portrait se landscape), home screen fade ke dauran apni jagah se uchhalti thi, aur

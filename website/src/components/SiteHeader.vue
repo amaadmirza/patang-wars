@@ -11,7 +11,8 @@
       </button>
       <nav id="sh-nav" class="sh-nav" :class="{ 'sh-open': open }" aria-label="Main">
         <router-link v-for="l in links" :key="l.to" :to="l.to" @click="open = false">{{ l.label }}</router-link>
-        <a class="btn sh-play" :href="config.playUrl" @click="open = false">Play now</a>
+        <a v-if="config.playUrl" class="btn sh-play" :href="config.playUrl" @click="open = false">Play now</a>
+        <router-link v-else class="btn sh-play" to="/download" @click="open = false">Get the game</router-link>
       </nav>
     </div>
   </header>
@@ -27,11 +28,11 @@ export default {
     const open = ref(false), solid = ref(false);
     const links = [
       { to: '/kites', label: 'Kites' },
+      { to: '/basant', label: 'Basant' },
       { to: '/how-to-play', label: 'How to play' },
       { to: '/modes', label: 'Modes' },
-      { to: '/updates', label: 'Updates' },
-      { to: '/faq', label: 'FAQ' },
-      { to: '/download', label: 'Download' }
+      { to: '/updates', label: "What's new" },
+      { to: '/faq', label: 'FAQ' }
     ];
     const onScroll = () => { solid.value = window.scrollY > 24; };
     const onKey = e => { if (e.key === 'Escape') open.value = false; };

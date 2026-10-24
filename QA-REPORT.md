@@ -1,3 +1,16 @@
+# v7.2 SQA (kite shape, stalls, website)
+
+| Check | Result |
+|---|---|
+| UI suite, web, computer 1366x768 | **28/28** |
+| UI suite, web, phone 844x390 | **28/28** |
+| UI suite, Android app bundle (offline) | **27/27** |
+| Online: host + friend in one room | **10/10**, no console errors |
+| `npm test` / physics checks | **121/121**, **50/50** |
+| Sail shape on steer / khainch / tunka (close-up strips) | max roll 52° → **16°**, khainch bow 0.28 → **0.15**, tunka swing 0.45 → **0.28** |
+| Busy Hard Festival, 10 kites, phone size, CPU 2x slower, own JS per frame | worst frame 516 → **82 ms**; frames over 100 ms 14 → **0**; p99 92 → **33 ms**; GC pauses over 10 ms 32 → **10–15** |
+| Website, 6 pages x computer + phone | no errors, no sideways scroll |
+
 # v7.1 SQA (full pass, after the rotation change)
 
 Driven through the real UI of the production builds (no debug hooks), every step checked for console errors, HTTP errors

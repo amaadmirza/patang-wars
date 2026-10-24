@@ -88,7 +88,7 @@ export default {
       { name: 'Duel', who: '1 player, 1 bot', text: 'One rival, one pecha after another. The best way to learn when to give dheel and when to pull.' },
       { name: 'Two players', who: '2 players, one keyboard', text: 'Split screen on one computer, with bots or without. P1 flies with WASD, P2 with IJKL.' },
       { name: 'Mohalla', who: '2 vs 2 or 3 vs 3', text: 'Team fights, and a career ladder of six neighbourhoods from Mozang to Androon Shehr. Call "Help me!" and a team-mate comes.' },
-      { name: 'Online', who: 'Up to 10 friends', text: 'Make a room on your own server, send the invite link on WhatsApp, and fight on one sky. The server decides every cut.' }
+      { name: 'Online', who: 'Up to 10 friends', text: 'Make a room, send the invite link on WhatsApp, and fight your friends on one sky. Every cut is decided fairly by the game, never by anyone\'s phone.' }
     ];
     const diffLabel = d => ({ easy: 'easy', normal: 'normal', hard: 'hard' }[d] || d);
     const statLabel = k => ({ cut: 'Cutting', strength: 'Strength', weight: 'Weight' }[k] || k);

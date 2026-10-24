@@ -343,6 +343,7 @@
     for (let b = 0; b < cfg.bots; b++) G.players.push(randomBot());
     if (mode === 'mohalla') setupTeams(cfg);
     G.players.forEach(spawn);
+    for (const q of G.players) warmKite(q.entry || (q.kite && q.kite.entry)); refillKati();
     G.viewers = G.players.filter(p => p.ctrl.startsWith('human'));
     $('#menu').classList.add('hidden'); $('#select').classList.add('hidden'); $('#results').classList.add('hidden'); $('#game').classList.remove('hidden');
     $('#touch').classList.toggle('hidden', !IS_TOUCH || humans === 2 || saved.touchMode === 'swipe');
@@ -904,8 +905,9 @@
     // pin (optional): { i, p } - one more point held in place, e.g. a looter's hand gripping the dor
     step(dt, wind, head, t, pin) {
       const n = this.n, p = this.p, q = this.q, pi = pin ? clamp(Math.round(pin.i), 1, n - 1) : -1;
+      const w = this._w || (this._w = [0, 0, 0]);
       for (let i = head ? 1 : 0; i < n; i++) {
-        const w = wind.at(p[i], t);
+        wind.at(p[i], t, w);
         for (let a = 0; a < 3; a++) {
           const target = a === 2 ? -1.6 : w[a] * 0.45, v = (p[i][a] - q[i][a]) / dt, nv = v + (target - v) * Math.min(1, 2.2 * dt);
           q[i][a] = p[i][a]; p[i][a] += nv * dt;
@@ -1167,6 +1169,7 @@
       hair: L.hair, hairStyle: ['short', 'curly', 'side'][Math.floor(r() * 3)], head: KID_HEAD[Math.floor(r() * KID_HEAD.length)], headColor: ['#d62828', '#ffffff', '#1d3557', '#f28c28'][Math.floor(r() * 4)],
       outfit: r() < 0.3 ? 'tshirt' : 'shalwar', print: r() < 0.5, expr: 'grin', shoes: '#6b4226' });
   }
+  let kidSeq = 0;
   function drawLooter(cam, L) {
     if (Math.hypot(L.p[0] - cam.pos[0], L.p[1] - cam.pos[1]) < 6) return;   // right under the camera: would fill the screen
     const jh = jumpH(L), moving = Math.hypot(L.v[0], L.v[1]) > 0.5, bob = moving ? Math.abs(Math.sin(L.t * 11 + L.ph)) * 0.09 : 0;
@@ -1185,8 +1188,11 @@
     }
     const runYaw = moving ? Math.atan2(L.v[1], L.v[0]) : (L.kite ? Math.atan2(L.kite.p[1] - L.p[1], L.kite.p[0] - L.p[0]) : 0);
     const viewYaw = Math.atan2(L.p[1] - cam.pos[1], L.p[0] - cam.pos[0]);
-    const out = Fliers.draw(ctx, base.x, base.y, h / 0.72, kidLook(L), { face: runYaw - viewYaw, aim, t: L.t + L.ph, mode: sad ? 'idle' : reel ? 'pull' : 'send', tug: L.jump > 0 ? 0.8 : 0,
-      lineColor: reel && L.kite ? L.kite.thread.color : 'rgba(0,0,0,0)', haulPh: reel ? L.haulPh : null, haul: reel ? 0.5 + 0.5 * Math.abs(Math.sin(L.haulPh || 0)) : 0 });
+    // v7.2: a kid was painted from scratch every frame (no sprite) - one running close to the camera cost 365 ms in a single
+    // frame. Kids now use the same cached, budgeted sprites as the rooftop people (~14 fresh paints a second).
+    L._fk = L._fk || 'kid' + (++kidSeq);
+    const out = drawFig(L._fk + (curViewer && curViewer.lootcam ? 'L' : ''), base.x, base.y, h / 0.72, kidLook(L), { face: runYaw - viewYaw, aim, t: L.t + L.ph, mode: sad ? 'idle' : reel ? 'pull' : 'send', tug: L.jump > 0 ? 0.8 : 0,
+      lineColor: reel && L.kite ? L.kite.thread.color : 'rgba(0,0,0,0)', haulPh: reel ? L.haulPh : null, haul: reel ? 0.5 + 0.5 * Math.abs(Math.sin(L.haulPh || 0)) : 0 }, QUAL.low ? 110 : 70);
     if (L.stick && out && out.hand && !reel) {
       const [hx, hy] = out.hand, al = Math.hypot(aim[0], aim[1]) || 1, len = h * 1.5;
       const ex = carry && tgt ? tgt.x : hx + (sad ? h * 0.45 : aim[0] / al * len), ey = carry && tgt ? tgt.y : hy + (sad ? h * 0.5 : aim[1] / al * len);
@@ -1253,10 +1259,15 @@
   /* ---------------- kati patang: kites cut on other rooftops drifting across the festival ----------------
    * On a real Basant the sky over your roof is never empty of loot: kites cut somewhere upwind come drifting over,
    * slowly losing height, trailing a long tail of dor. Wrap one with your line (lapetna) and it flies down to you. */
+  function refillKati() {   // keep a few loot kites ready, their pictures warmed long before they drift into view
+    if (!G) return; const pics = CAT.filter(e => (e.src || e.recipe) && !e.mine && ['patang', 'tukkal', 'pipa'].includes(e.arche)); if (!pics.length) return;
+    G.katiPool = G.katiPool || []; while (G.katiPool.length < 4) { const e = pick(pics); G.katiPool.push(e); warmKite(e); }
+  }
   function spawnKati() {
     const v = G.viewers[0], K = v && v.kite && !v.kite.free ? v.kite.p : [35, 0, 28];
     const pics = CAT.filter(e => (e.src || e.recipe) && !e.mine && ['patang', 'tukkal', 'pipa'].includes(e.arche)); if (!pics.length) return;
-    const entry = pick(pics), w = G.wind.at([K[0], K[1], 30], G.t), wh = Math.hypot(w[0], w[1]) || 1;
+    const entry = (G.katiPool && G.katiPool.length ? G.katiPool.shift() : null) || pick(pics); refillKati();   // already decoded and scaled (warmKite)
+    const w = G.wind.at([K[0], K[1], 30], G.t), wh = Math.hypot(w[0], w[1]) || 1;
     const T = 16 + Math.random() * 14, fall = 0.7 + Math.random() * 0.25, drift = 0.4 * wh * T;
     // start upwind of your kite, high, so it drifts over your roof and across your line (or just past it)
     const p0 = [K[0] - w[0] / wh * drift, K[1] - w[1] / wh * drift + (Math.random() - 0.5) * 24, clamp(K[2] + fall * T + (Math.random() * 10 - 3), 22, 95)];
@@ -1826,15 +1837,26 @@
    * at the cut. Skip ends it at once; "Don't show replays" turns them off (Settings brings them back).
    * Online the match can't pause, so there it only plays when it was YOUR kite that was cut (you're waiting anyway). */
   const RP = { keep: 3.2, before: 1.8, after: 0.9 };
-  function snapKite(k) {
-    const o = {};
+  /* v7.2 NO GARBAGE: the recorder used to build a brand-new copy of every kite (dozens of fields and arrays), every loose
+   * string, rope, spark and kid 60 times a second and keep 3.2 s of them. That flood of short-lived objects was promoted to
+   * long-lived memory and set off full garbage collections - the occasional "stuck" moment while flying and in a pecha
+   * (sampling showed the recorder holding ~5.4 MB, more than everything else together). Each kite and rope now has its own
+   * ring of snapshot slots, overwritten in place: recording allocates next to nothing. A replay copies what it shows once,
+   * when it starts. */
+  const SNAP_RING = 210;   // > keep (3.2 s) x 60 records a second, so a slot is never reused while still in the window
+  const copyInto = (dst, src) => { if (dst && dst.length === src.length) { for (let i = 0; i < src.length; i++) dst[i] = src[i]; return dst; } return src.slice(); };
+  function snapKite(k, fresh) {
+    let o;
+    if (fresh) o = {};
+    else { const ring = k._snaps || (k._snaps = { a: new Array(SNAP_RING), i: 0 }); o = ring.a[ring.i % SNAP_RING] || (ring.a[ring.i % SNAP_RING] = {}); ring.i++; }
     for (const key in k) {
+      if (key === '_snaps') continue;
       const v = k[key], t = typeof v;
       if (t === 'number' || t === 'boolean') o[key] = v;
-      else if (Array.isArray(v) && (!v.length || typeof v[0] === 'number')) o[key] = v.slice();
+      else if (Array.isArray(v) && (!v.length || typeof v[0] === 'number')) o[key] = copyInto(o[key], v);
     }
-    o.__pd = k._pechaDraw ? k._pechaDraw.map(d => ({ ...d, point: d.point && d.point.slice() })) : null;
-    o.__trail = k.trail ? k.trail.p.map(q => q.slice()) : null;
+    o.__pd = k._pechaDraw && k._pechaDraw.length ? k._pechaDraw.map(d => ({ ...d, point: d.point && d.point.slice() })) : null;
+    if (k.trail) { const tp = k.trail.p, dst = Array.isArray(o.__trail) && o.__trail.length === tp.length ? o.__trail : (o.__trail = new Array(tp.length)); for (let i = 0; i < tp.length; i++) dst[i] = copyInto(dst[i], tp[i]); } else o.__trail = null;
     o.__hook = k.caught && k.caught.hook ? k.caught.hook.slice() : null;
     o.__trailRef = k.trail || null; o.__caughtRef = k.caught || null;   // the live objects themselves, to put back untouched
     return o;
@@ -1858,11 +1880,14 @@
     const R = G.rec60 || (G.rec60 = []), kites = new Set();
     for (const p of G.players) if (p.kite) kites.add(p.kite);
     for (const d of G.drifters) kites.add(d);
+    const ropeSnap = r => { const ring = r._snaps || (r._snaps = { a: new Array(SNAP_RING), i: 0 }), j = ring.i++ % SNAP_RING; const o = ring.a[j] || (ring.a[j] = { rope: { p: [] } });
+      for (const key in r) if (key !== 'rope' && key !== '_snaps') o[key] = r[key];
+      const src = r.rope.p, dst = o.rope.p; dst.length = src.length; for (let i = 0; i < src.length; i++) dst[i] = copyInto(dst[i], src[i]); return o; };
     R.push({ t: G.t, players: G.players.map(p => ({ p, kite: p.kite, landing: p.landing, cheerT: p.cheerT, sadT: p.sadT, bubble: p.bubble ? { ...p.bubble } : null })),
       kites: [...kites].map(k => [k, snapKite(k)]), drifters: G.drifters.slice(),
-      looters: G.looters.map(L => ({ ...L, p: L.p.slice(), v: L.v.slice() })), ropes: G.ropes.map(r => ({ ...r, rope: { p: r.rope.p.map(q => q.slice()) } })),
+      looters: G.looters.map(L => ({ ...L, p: L.p.slice(), v: L.v.slice() })), ropes: G.ropes.map(ropeSnap),
       sparks: G.sparks.map(x => ({ ...x, p: x.p.slice() })), fx: G.fx.map(x => ({ ...x })) });
-    while (R.length && G.t - R[0].t > RP.keep) R.shift();
+    let drop = 0; while (drop < R.length && G.t - R[drop].t > RP.keep) drop++; if (drop) R.splice(0, drop);
   }
   function wantReplay(lp, wp) {
     if (!saved.replay || G.tut || G.replay || G.replayReq) return false;
@@ -1871,7 +1896,11 @@
   }
   function startReplay() {
     const q = G.replayReq; G.replayReq = null;
-    const frames = (G.rec60 || []).filter(f => f.t >= q.cutT - RP.before);
+    // the frames are copied once here: the recording slots are reused, and online the match keeps recording during a replay
+    const deep = v => Array.isArray(v) ? v.map(deep) : v;
+    const frames = (G.rec60 || []).filter(f => f.t >= q.cutT - RP.before).map(f => ({ ...f,
+      kites: f.kites.map(([k, o]) => { const c = {}; for (const key in o) c[key] = Array.isArray(o[key]) ? deep(o[key]) : o[key]; return [k, c]; }),
+      ropes: f.ropes.map(r => ({ ...r, rope: { p: r.rope.p.map(q => q.slice()) } })) }));
     if (frames.length < 20) return;
     const viewer = G.viewers.find(v => v === q.lp || v === q.wp) || G.viewers[0];
     G.replay = { frames, t: frames[0].t, t1: frames[frames.length - 1].t, cutT: q.cutT, point: q.point, viewer, pausedSim: !G.online && !G.paused, cam: null, hands: new Map(), whoosh: false };
@@ -1904,7 +1933,7 @@
     const F = R.frames[i], N = R.frames[i + 1] || F, f = N.t > F.t ? clamp((R.t - F.t) / (N.t - F.t), 0, 1) : 0;
     // keep the live sky aside, put the recorded one in place, draw, then put the live one back
     const live = { players: G.players.map(p => ({ p, kite: p.kite, landing: p.landing, cheerT: p.cheerT, sadT: p.sadT, bubble: p.bubble })), drifters: G.drifters, looters: G.looters, ropes: G.ropes, sparks: G.sparks, fx: G.fx, popups: G.popups, t: G.t };
-    const liveKites = new Map(); for (const [k] of F.kites) liveKites.set(k, snapKite(k)); for (const p of G.players) if (p.kite && !liveKites.has(p.kite)) liveKites.set(p.kite, snapKite(p.kite));
+    const liveKites = new Map(); for (const [k] of F.kites) liveKites.set(k, snapKite(k, true)); for (const p of G.players) if (p.kite && !liveKites.has(p.kite)) liveKites.set(p.kite, snapKite(p.kite, true));
     try {
       for (const x of F.players) { x.p.kite = x.kite; x.p.landing = x.landing; x.p.cheerT = x.cheerT; x.p.sadT = x.sadT; x.p.bubble = x.bubble; }
       const nextOf = new Map(N.kites);
@@ -1931,6 +1960,7 @@
   // low = a small banner near the bottom (pecha on / released): the big centre one would sit right on top of the fight
   function banner(p, text, color, dur = 1.6, low = false) { if (p.ctrl.startsWith('human')) p.banner = { text, color, t: dur, t0: dur, low }; }
   function onCut(loser, winner, snap, s, point) {
+    dbgEv('cut');
     const lp = loser.owner, wp = winner && winner.owner, newsy = real(lp) || real(wp); lp.score.lost++; lp.sadT = G.t; if (wp && !snap) wp.cheerT = G.t; lp.respawn = 2.6; lp.streak = 0;
     if (lp.ctrl.startsWith('human') && !G.tut) stat(s => { s.lost++; });
     splitLine(loser, s || 0.5, snap);
@@ -2516,9 +2546,10 @@
    * lighting pass each - and that alone was over a third of a phone's whole frame budget (the "little bit stuck" feel).
    * Figures other than your own are now painted into a small sprite of their own and re-painted ~10 times a second
    * (often enough for breathing, hauling and dancing at their size); each frame only stamps the sprite. */
-  const figCache = new Map(), figBudget = { n: 3 };
+  const figCache = new Map(), figBudget = { n: 3, ms: 0 };
   function drawFig(key, x, y, h, look, pose, everyMs, prio = false) {
     const now = performance.now(), U = h * ((look && look.age) === 'kid' ? 0.72 : 1);
+    if (now - (figCache.pruned || 0) > 5000) { figCache.pruned = now; for (const [key, e] of figCache) if (now - (e.used || 0) > 8000) figCache.delete(key); }   // kids come and go
     let c = figCache.get(key);
     const lk = look ? (look.id || '') + '|' + (look.expr || '') + '|' + (look.kameez || '') + '|' + (look.skin ?? '') : '';
     // first paint or a new look: now. A size change (the camera zooming in on a pecha changes EVERY figure's size at
@@ -2526,19 +2557,28 @@
     // new size and the re-paints are spread over the next frames by the budget below
     const must = !c || c.lk !== lk;
     everyMs *= h < 22 ? 4 : h < 45 ? 2 : 1;   // v7.1: a figure a few pixels tall doesn't need 10 fresh paints a second
-    const stale = must || ((now - c.t > everyMs || Math.abs(c.h - h) > h * 0.06 || c.mode !== pose.mode) && (prio || figBudget.n > 0));
+    /* v7.2 THE PECHA STALL (measured: single frames of 200-500 ms, almost all in repainting rooftop people). When the camera
+     * zooms in on a pecha every figure's size changes a little each frame, and a 6% size change forced a repaint - your own
+     * flier, which skips the per-frame budget, was repainted in full on EVERY frame of the zoom. Now a size change only
+     * stretches the sprite (repaint at the normal pace, or after a 30% jump), each figure's repaint rate adapts to what its
+     * painting really costs (never more than ~1/8 of the time), and repaints stop for the frame once ~4 ms went on them. */
+    if (c && c.cost) everyMs = Math.max(everyMs, c.cost * 8);
+    const sizeJump = c && Math.abs(c.h - h) > h * 0.3;
+    const stale = must || ((now - c.t > everyMs || sizeJump || c.mode !== pose.mode) && (prio ? figBudget.ms < 8 : (figBudget.n > 0 && figBudget.ms < 4)));
     if (stale) {
       if (KF_DEBUG) { window.__figPaint = (window.__figPaint || 0) + 1; if (must) window.__figMust = (window.__figMust || 0) + 1; }
       if (!must && !prio) figBudget.n--;   // at most a few re-paints per frame, so they never all land on the same frame
       if (!c) { c = { cv: document.createElement('canvas') }; figCache.set(key, c); }
-      const sc = Math.min(DPR, h > 120 ? 1.5 : 2), w = Math.ceil(U * 2.6), top = Math.ceil(U * 1.85), bot = Math.ceil(U * 0.3), ox = w / 2;
+      // the sprite is never painted bigger than ~360 device pixels tall (the big flier right in front of you was ~1000)
+      const sc = Math.min(DPR, h > 120 ? 1.5 : 2, 360 / (U * 2.15)), w = Math.ceil(U * 2.6), top = Math.ceil(U * 1.85), bot = Math.ceil(U * 0.3), ox = w / 2;
       const pw = Math.ceil(w * sc), ph = Math.ceil((top + bot) * sc);
-      if (c.cv.width < pw || c.cv.height < ph || c.cv.width > pw * 2) { c.cv.width = pw; c.cv.height = ph; }
+      const ta0 = KF_DEBUG ? performance.now() : 0; if (c.cv.width < pw || c.cv.height < ph || c.cv.width > pw * 2) { c.cv.width = pw; c.cv.height = ph; dbgEv('figResize'); } dbgT('tFigAlloc', ta0);
       const g = c.cv.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, c.cv.width, c.cv.height); g.setTransform(sc, 0, 0, sc, 0, 0);
-      const out = Fliers.draw(g, ox, top, h, look, pose);
+      const tf0 = KF_DEBUG ? performance.now() : 0; const out = Fliers.draw(g, ox, top, h, look, pose); dbgT('tFigPaint', tf0);
+      const spent = performance.now() - now; figBudget.ms += spent; c.cost = c.cost ? c.cost * 0.7 + spent * 0.3 : spent;
       Object.assign(c, { t: now - (c.t ? 0 : Math.random() * everyMs), h, mode: pose.mode, lk, ox, top, w: c.cv.width / sc, hh: c.cv.height / sc, hand: out && out.hand ? [out.hand[0] - ox, out.hand[1] - top] : null });
     }
-    const k = h / c.h;   // 1 unless the sprite is waiting for its re-paint at a new size
+    c.used = now; const k = h / c.h;   // 1 unless the sprite is waiting for its re-paint at a new size
     ctx.drawImage(c.cv, x - c.ox * k, y - c.top * k, c.w * k, c.hh * k);
     return c.hand ? { hand: [x + c.hand[0] * k, y + c.hand[1] * k] } : null;
   }
@@ -2554,7 +2594,7 @@
       // After a cut they celebrate (arms jerk up, big grin); after losing a kite they stand a moment, serious.
       const ks = k ? project(cam, k.p) : null, shoulder = [base.x, base.y - hgt * 0.78];
       const aim = ks ? [ks.x - shoulder[0], ks.y - shoulder[1]] : [0.3, -1];
-      const sp = spoolBitmap(spoolImg(spoolFor(p), THREADS[p.thread].color)); if (sp) { const ss = hgt * 0.24; ctx.drawImage(sp, base.x - hgt * 0.42, base.y - ss * 0.9, ss, ss * sp.height / sp.width); }
+      const ts0 = KF_DEBUG ? performance.now() : 0; const sp = spoolBitmap(spoolImg(spoolFor(p), THREADS[p.thread].color)); dbgT('tSpool', ts0); if (sp) { const ss = hgt * 0.24; ctx.drawImage(sp, base.x - hgt * 0.42, base.y - ss * 0.9, ss, ss * sp.height / sp.width); }
       const live = k && !k.free, mode = !live ? 'idle' : (k.pullE > 0.2 || p.landing) ? 'pull' : k.sendE > 0.25 ? 'send' : 'idle';
       const cheer = G.t - (p.cheerT ?? -99) < 2.2, sad = G.t - (p.sadT ?? -99) < 2.5;
       const look = cheer ? { ...ch.drawn, expr: 'grin' } : sad ? { ...ch.drawn, expr: 'serious' } : ch.drawn;
@@ -2667,7 +2707,7 @@
     if (!pts && k._gm && k._gm.cam === cam) return k._gm.gm;   // already worked out this frame, from the dor being drawn
     const s = project(cam, k.p); if (!s) return null;
     const { px, py } = kiteSize(cam, k, s);
-    const lean = k.free ? 0 : (k.lean || 0), tk = k.tunkaT || 0, swing = tk * 0.45 * Math.sin((1 - tk) * 15) * (k.tunkaDir || 1);
+    const lean = k.free ? 0 : (k.lean || 0), tk = k.tunkaT || 0, swing = tk * 0.28 * Math.sin((1 - tk) * 15) * (k.tunkaDir || 1);
     const rot = k.bodyAngle + lean * 0.14 + swing + kiteAtt(k).rot;
     // THE KNOT IS ON THE DOR. Walk the dor's own screen path back from the kite until it is a kanni's length away
     // from the kite's centre: that point is the knot, so the line always ends exactly where the two kanni strings
@@ -2704,6 +2744,8 @@
    * Pictures are drawn from small pre-scaled copies (mipmaps): sharper (no shimmer when a 512 px picture is squeezed into
    * 30 px) and cheaper for the phone. */
   let frameNo = 0, mipBudget = 2;
+  const dbgEv = KF_DEBUG ? (k => { const E = window.__ev = window.__ev || {}; E[k] = (E[k] || 0) + 1; }) : () => {};
+  const dbgT = KF_DEBUG ? ((k, t0) => { const E = window.__ev = window.__ev || {}; E[k] = +((E[k] || 0) + performance.now() - t0).toFixed(2); }) : () => {};
   function kiteMip(im, need) {   // need = device pixels across the drawn kite
     const W0 = im.naturalWidth || im.width, H0 = im.naturalHeight || im.height; if (!W0 || !H0) return null;
     let m = im._mips; if (!m || m.w !== W0) m = im._mips = { w: W0, lv: {}, dk: {} };
@@ -2711,7 +2753,7 @@
     if (target >= Math.max(W0, H0)) return im;
     if (m.lv[target]) return m.lv[target];
     if (mipBudget <= 0) { for (const t of [target * 2, target * 4, target / 2]) if (m.lv[t]) return m.lv[t]; return im; }   // made over the next frames, never all at once
-    mipBudget--;
+    mipBudget--; dbgEv('mip');
     const sc = target / Math.max(W0, H0), tw = Math.max(1, Math.round(W0 * sc)), th = Math.max(1, Math.round(H0 * sc));
     let src = im, sw = W0, sh = H0;
     while (sw / 2 >= tw * 1.01) {   // halve step by step: a clean downscale, no aliasing
@@ -2720,8 +2762,33 @@
     const c = document.createElement('canvas'); c.width = tw; c.height = th; const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(src, 0, 0, tw, th);
     return (m.lv[target] = c);
   }
+  /* v7.2 WARM-UP: a kite picture used to be decoded, scaled down and shaded the first time it was DRAWN - in the middle of
+   * a frame, exactly when a new kite came into the fight (a respawn, a loot kite drifting over, the camera closing in on a
+   * pecha). Now every kite of the match is decoded off the main thread when the match starts, and its scaled copies are
+   * made in the idle moments between frames, a little at a time. */
+  const idle = typeof requestIdleCallback === 'function' ? (f => requestIdleCallback(f, { timeout: 400 })) : (f => setTimeout(f, 60));
+  const warmQ = [];
+  function warmKite(entry) {
+    if (!entry) return; const im = kiteImg(entry); if (!im || im._warm) return; im._warm = 1;
+    const go = () => { warmQ.push([im, 64], [im, 128]); pumpWarm(); };
+    if (im.decode && !im.recipe && im.src) im.decode().then(go, go); else if (im.ready && im.ready.then) im.ready.then(go, go); else go();
+  }
+  let warmBusy = false;
+  function pumpWarm() {
+    if (warmBusy || !warmQ.length) return; warmBusy = true;
+    idle(deadline => {
+      warmBusy = false;
+      while (warmQ.length && (!deadline || !deadline.timeRemaining || deadline.timeRemaining() > 4)) {
+        const [im, lvl] = warmQ.shift(); if (!(im.naturalWidth || im.width)) continue;
+        const keep = mipBudget; mipBudget = 1; const m = kiteMip(im, lvl / 1.25); mipBudget = keep;
+        if (m && m !== im && !QUAL.low) kiteShadeOf(m);
+        if (!deadline || !deadline.timeRemaining) break;   // setTimeout fallback: one per tick
+      }
+      pumpWarm();
+    });
+  }
   function kiteShadeOf(src) {   // the same picture in shadow (only where the paper is - alpha kept), for the turned-away cells
-    if (src._dark) return src._dark;
+    if (src._dark) return src._dark; dbgEv('shade');
     const w = src.naturalWidth || src.width, h = src.naturalHeight || src.height; if (!w) return null;
     const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
     g.drawImage(src, 0, 0); g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(10,8,20,.62)'; g.fillRect(0, 0, w, h);
@@ -2739,28 +2806,32 @@
     const loose = free ? 1 : clamp(0.35 + send * 0.9 - pull * 0.3, 0, 1.2);   // a slack line lets the sail rock more
     const n1 = 0.55 * Math.sin(2.1 * t + ph) + 0.3 * Math.sin(3.7 * t + 2.3 * ph) + 0.15 * Math.sin(6.3 * t + 0.7 * ph);
     const n2 = 0.6 * Math.sin(1.7 * t + 1.9 * ph) + 0.4 * Math.sin(4.3 * t + 0.4 * ph);
-    const turnBank = clamp(-(k.headingVel || 0) * 0.075, -0.55, 0.55);
-    const rT = (free ? 0 : (k.roll || 0)) * 0.9 + turnBank + n1 * (0.1 + 0.22 * loose);
-    const tk = k.tunkaT || 0; if (tk > a.tk + 0.2) { a.rv += (k.tunkaDir || 1) * 5; a.pv -= 3; } a.tk = tk;   // a jhatka snaps the sail
-    a.rv += (70 * (rT - a.r) - 7 * a.rv) * dt; a.r = clamp(a.r + a.rv * dt, -1.25, 1.25);   // ~1.3 Hz, lightly damped
+    /* v7.2 CALMER SAIL: players found the kite "too disturbed" on steer, tunka and khainch. Measured (close-ups, hilal kite):
+     * steering tipped the sail 52 deg (almost edge-on, a sliver), khainch bent the wings back 28% of the kite's width, each
+     * tunka kicked it hard. Now: tilt at most ~22 deg, a stiffer, well-damped spring (no overshoot), gentle bend and flutter. */
+    const turnBank = clamp(-(k.headingVel || 0) * 0.03, -0.2, 0.2);
+    const rT = (free ? 0 : (k.roll || 0)) * 0.35 + turnBank + n1 * (0.05 + 0.1 * loose);
+    const tk = k.tunkaT || 0; if (tk > a.tk + 0.2) { a.rv += (k.tunkaDir || 1) * 1.4; a.pv -= 0.9; } a.tk = tk;   // a tunka nudges the sail
+    a.rv += (90 * (rT - a.r) - 13 * a.rv) * dt; a.r = clamp(a.r + a.rv * dt, -0.38, 0.38);   // ~1.5 Hz, well damped
     const pT = n2 * 0.07 * (0.4 + loose) + pull * 0.08 - send * 0.05;
     a.pv += (90 * (pT - a.p) - 9 * a.pv) * dt; a.p += a.pv * dt;
     a.zv += (60 * (n2 * 0.09 * loose - a.z) - 8 * a.zv) * dt; a.z += a.zv * dt;   // a small rock in the picture plane
     a.flT += dt * (9 + 6 * load);
     // turning on its own (idle ghoomna or dheel), the sail tips back and rocks onto its edge, as in the reference video
     const spinV = free ? 0 : clamp(Math.max(k.idleE || 0, k.spinE || 0), 0, 1);
-    a.roll = a.r + spinV * 0.32 * Math.sin(t * 2.3 + ph); a.pitch = (k.incl || 0) + a.p + spinV * 0.22; a.rot = clamp(a.z, -0.13, 0.13);
-    a.bow = free ? 0.08 : 0.15 + 0.12 * load + 0.02 * Math.sin(8.5 * t + ph) * load;
-    a.flA = 0.022 + 0.04 * load + (free ? 0.02 : 0);
+    a.roll = a.r + spinV * 0.14 * Math.sin(t * 2.3 + ph); a.pitch = (k.incl || 0) + clamp(a.p, -0.15, 0.15) + spinV * 0.12; a.rot = clamp(a.z, -0.13, 0.13);
+    a.bow = free ? 0.07 : 0.1 + 0.05 * load + 0.006 * Math.sin(8.5 * t + ph) * load;
+    a.flA = 0.012 + 0.012 * load + (free ? 0.012 : 0);
     return a;
   }
   /* draw the picture as a bowed sail. W,H: drawn size; x0,y0: its top-left in the kite's own (rotated) frame;
    * cx,cy: the point it turns about; devPx: device pixels across it (decides mip level and grid size).
    * Returns the projection (u,v in 0..1 -> [x,y]) so the kanni strings can be tied to the same sail. */
   function drawSail(im, W, H, x0, y0, cx, cy, att, devPx) {
+    if (KF_DEBUG && !im._seenDraw) { im._seenDraw = 1; dbgEv('firstDraw'); }
     const src = kiteMip(im, devPx) || im, SW = src.naturalWidth || src.width, SH = src.naturalHeight || src.height;
     const cols = devPx < 28 ? 1 : devPx < 64 ? 4 : devPx < 130 ? 6 : 8, rows = devPx < 28 ? 1 : devPx < 100 ? 2 : 3;
-    const cp = Math.cos(att.pitch), sp = Math.sin(att.pitch), cr = Math.cos(att.roll), sr = Math.sin(att.roll), f = Math.max(W, H) * 3.2;
+    const cp = Math.cos(att.pitch), sp = Math.sin(att.pitch), cr = Math.cos(att.roll), sr = Math.sin(att.roll), f = Math.max(W, H) * 4.5;
     const bow = cols > 1 ? att.bow * W : 0, flA = cols > 1 ? att.flA * W : 0, flT = att.flT;
     const P = (u, v) => {
       const uu = u * 2 - 1, X = x0 + u * W - cx, Y = y0 + v * H - cy, au = Math.abs(uu);
@@ -2778,7 +2849,7 @@
       ctx.setTransform(B.a * a + B.c * b, B.b * a + B.d * b, B.a * c + B.c * d, B.b * c + B.d * d, B.a * e + B.c * ff + B.e, B.b * e + B.d * ff + B.f);
       ctx.drawImage(src, sx, sy, sw + ow, sh + oh, 0, 0, sw + ow, sh + oh);
       if (dark) {   // turned away from you (squeezed across) -> a little darker
-        const sq = Math.hypot(p10[0] - p00[0], p10[1] - p00[1]) / cw, shade = clamp((0.97 - sq) * 1.1, 0, 0.42);
+        const sq = Math.hypot(p10[0] - p00[0], p10[1] - p00[1]) / cw, shade = clamp((0.97 - sq) * 1.1, 0, 0.3);
         if (shade > 0.03) { const ga = ctx.globalAlpha; ctx.globalAlpha = ga * shade; ctx.drawImage(dark, sx, sy, sw + ow, sh + oh, 0, 0, sw + ow, sh + oh); ctx.globalAlpha = ga; }
       }
     }
@@ -2793,7 +2864,7 @@
     const flap = 1 + 0.012 * Math.sin(k.t * 7 + k.swayPh);   // the paper breathes a little in the wind - not a wobble
     const lean = k.free ? 0 : (k.lean || 0);
     // a kite on an off-centre kanni hangs tilted toward that wing; a tunka gives a quick pendulum swing that settles
-    const tk = k.tunkaT || 0, swing = tk * 0.45 * Math.sin((1 - tk) * 15) * (k.tunkaDir || 1);
+    const tk = k.tunkaT || 0, swing = tk * 0.28 * Math.sin((1 - tk) * 15) * (k.tunkaDir || 1);
     const att = kiteAtt(k), rot = k.bodyAngle + lean * 0.14 + swing + att.rot;
     const pivotX = lean * 0.07 * px, pivotY = -clamp(k.kanni * 3.2, -0.4, 0.4) * py;
 
@@ -2996,14 +3067,14 @@
     curViewer = viewer;
     const { x, y, w, h } = vp, W0 = w, H0 = h; ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip(); ctx.translate(x, y);
     const SK = (KF_DEBUG && window.__skip) || {};
-    const cam = camFor(viewer, w, h, dt); viewer.lastCam = cam; viewer.lastVp = { w, h }; if (!SK.world) drawWorld(cam, w, h); else { ctx.fillStyle = '#6ab'; ctx.fillRect(0, 0, w, h); }
+    const cam = camFor(viewer, w, h, dt); viewer.lastCam = cam; viewer.lastVp = { w, h }; const tw0 = KF_DEBUG ? performance.now() : 0; if (!SK.world) drawWorld(cam, w, h); else { ctx.fillStyle = '#6ab'; ctx.fillRect(0, 0, w, h); } dbgT('tWorld', tw0);
     const mine = p => viewer.shared ? G.viewers.includes(p) : p === viewer;
     const items = [];
     for (const p of G.players) {
       const own = mine(p), hm = homeOf(p), dc = Math.hypot(hm[0] - cam.pos[0], hm[1] - cam.pos[1]);
       viewer._hands = viewer._hands || new Map();
-      if (hm[2] > 0.2 && !SK.figs) items.push({ d: -1e6 + dc + 0.5, f: () => drawRoof(cam, hm) });
-      if (!SK.figs) items.push({ d: -1e6 + dc, f: () => { const h = drawPerson(cam, p, own); if (h) viewer._hands.set(p, h); else viewer._hands.delete(p); } });
+      if (hm[2] > 0.2 && !SK.figs) items.push({ k: 'roof', d: -1e6 + dc + 0.5, f: () => drawRoof(cam, hm) });
+      if (!SK.figs) items.push({ k: 'person', d: -1e6 + dc, f: () => { const h = drawPerson(cam, p, own); if (h) viewer._hands.set(p, h); else viewer._hands.delete(p); } });
       const k = p.kite; if (!k || k.inDrifters) continue;   // a cut kite is drawn once, from the drifters list
       if (!k.free) {
         // in a pecha the line is drawn hooked: bent through the crossing, so you see which line is on top
@@ -3013,7 +3084,7 @@
         // held a second short stretch of line - which read as two dors)
         const hand = viewer._hands && viewer._hands.get(p), gm = kiteGeom(cam, k, pts), knot = gm && gm.px > 6 && gm.cut >= 0 ? { ...gm.knot, i: gm.cut } : null;
         const night = G.sc.nightDrawn || G.sc.night;
-        items.push({ d: k.p[0] + 1, f: () => { if (night && !QUAL.low) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; polyline(cam, pts, k.thread.color, own ? 5 : 3.5, 0.16, hand, knot); ctx.restore(); }
+        items.push({ k: 'line', d: k.p[0] + 1, f: () => { if (night && !QUAL.low) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; polyline(cam, pts, k.thread.color, own ? 5 : 3.5, 0.16, hand, knot); ctx.restore(); }
           const inMine = pd && (own || k._pechaDraw.some(d => mine(d.other.owner))), lw = (own ? 1.6 : 1.1) * (inMine ? 1.1 : 1);   // v6.5: barely thicker in a pecha (1.7x was too heavy)
           // in YOUR pecha the two dor must never be confused (both are often red/pink manjha): yours has a white edge,
           // theirs a dark one
@@ -3021,19 +3092,19 @@
           polyline(cam, pts, k.hot > 0 ? '#ff5a5a' : k.thread.color, lw, inMine ? 1 : own ? 0.95 : 0.75, hand, knot); } });
       }
       if (k.trail) items.push({ d: k.p[0] + 1, f: () => polyline(cam, k.trail.p, k.thread.color, 1.2, 0.85) });
-      if (!SK.kites) items.push({ d: k.p[0], f: () => drawKite(cam, k, own, 1, dt) });
+      if (!SK.kites) items.push({ k: 'kite', d: k.p[0], f: () => drawKite(cam, k, own, 1, dt) });
     }
     for (const d of G.drifters) {
       const fade = d.landed ? clamp(1 - (d.groundT - 4) / 2, 0, 1) : 1;
-      if (d.trail && !d.landed) items.push({ d: d.p[0] + 1, f: () => polyline(cam, d.trail.p, d.thread.color, 1.1, 0.7) });
-      if (d.caught && d.caught.hook) items.push({ d: d.p[0] + 0.5, f: () => drawWrap(cam, d) });
-      items.push({ d: d.p[0], f: () => drawKite(cam, d, false, fade, dt) });
+      if (d.trail && !d.landed) items.push({ k: 'dtrail', d: d.p[0] + 1, f: () => polyline(cam, d.trail.p, d.thread.color, 1.1, 0.7) });
+      if (d.caught && d.caught.hook) items.push({ k: 'wrap', d: d.p[0] + 0.5, f: () => drawWrap(cam, d) });
+      items.push({ k: 'drifter', d: d.p[0], f: () => drawKite(cam, d, false, fade, dt) });
     }
-    if (!SK.figs) for (const P of PARTY) { const dc = Math.hypot(P.home[0] - cam.pos[0], P.home[1] - cam.pos[1]); items.push({ d: -1e6 + dc + 0.5, f: () => drawRoof(cam, P.home) }); items.push({ d: -1e6 + dc, f: () => drawParty(cam, P) }); }
-    for (const L of G.looters) items.push({ d: -1e6 + Math.hypot(L.p[0] - cam.pos[0], L.p[1] - cam.pos[1]) + 0.2, f: () => drawLooter(cam, L) });
-    for (const r of G.ropes) items.push({ d: 0, f: () => polyline(cam, r.rope.p, r.color, 1.2, Math.min(1, r.life / 3) * 0.85) });
+    if (!SK.figs) for (const P of PARTY) { const dc = Math.hypot(P.home[0] - cam.pos[0], P.home[1] - cam.pos[1]); items.push({ k: 'proof', d: -1e6 + dc + 0.5, f: () => drawRoof(cam, P.home) }); items.push({ k: 'party', d: -1e6 + dc, f: () => drawParty(cam, P) }); }
+    for (const L of G.looters) items.push({ k: 'looter', d: -1e6 + Math.hypot(L.p[0] - cam.pos[0], L.p[1] - cam.pos[1]) + 0.2, f: () => drawLooter(cam, L) });
+    for (const r of G.ropes) items.push({ k: 'rope', d: 0, f: () => polyline(cam, r.rope.p, r.color, 1.2, Math.min(1, r.life / 3) * 0.85) });
     drawWorldLife(cam);
-    (SK.items ? [] : items).sort((a, b) => b.d - a.d).forEach(i => i.f());
+    const ti0 = KF_DEBUG ? performance.now() : 0; (SK.items ? [] : items).sort((a, b) => b.d - a.d).forEach(i => { if (!KF_DEBUG) return i.f(); const a = performance.now(); i.f(); dbgT('t.' + (i.k || 'x'), a); }); dbgT('tItems', ti0);
     for (const s of G.sparks) { const q = project(cam, s.p); if (q) { ctx.fillStyle = s.c || '#ffe066'; ctx.globalAlpha = clamp(s.t / (s.t0 || 0.25), 0, 1); ctx.beginPath(); ctx.arc(q.x, q.y, 1.5 + 4 * (s.big ? 2.2 : 1), 0, 7); ctx.fill(); ctx.globalAlpha = 1; } }
     for (const f of G.fx) {
       const q = project(cam, f.p); if (!q) continue;
@@ -3093,14 +3164,16 @@
     ctx.restore();
   }
   function render(dt) {
-    figBudget.n = 2; frameNo++; mipBudget = 2;
+    figBudget.n = 2; figBudget.ms = 0; frameNo++; mipBudget = 2; const tr0 = KF_DEBUG ? performance.now() : 0;
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);   // draw in CSS pixels on a full-resolution canvas (sharp on phones / HiDPI)
     const W = CW, H = CH;   // (no clear: every viewport paints its own sky edge to edge)
     const v = G.viewers;
     if (v.length === 1) drawViewport({ x: 0, y: 0, w: W, h: H }, v[0], dt);
     else if (G.layout === 'shared') drawViewport({ x: 0, y: 0, w: W, h: H }, sharedView, dt);
     else { drawViewport({ x: 0, y: 0, w: W / 2 - 2, h: H }, v[0], dt); drawViewport({ x: W / 2 + 2, y: 0, w: W / 2 - 2, h: H }, v[1], dt); ctx.fillStyle = '#0b0f19'; ctx.fillRect(W / 2 - 2, 0, 4, H); }
+    const tp0 = KF_DEBUG ? performance.now() : 0;
     if (!(KF_DEBUG && window.__skip && window.__skip.pip)) drawLootPip(W, H, dt);
+    if (KF_DEBUG) { const E = window.__ev = window.__ev || {}; E.msPip = +(performance.now() - tp0).toFixed(1); E.msMain = +(tp0 - tr0).toFixed(1); }
     ctx.save(); ctx.scale(UI, UI);
     { const W = CW / UI, H = CH / UI;
       drawWindGauge(v.length > 1 && G.layout !== 'shared' ? W / 2 : W, v.length > 1 && G.layout === 'shared' ? sharedView : v[0]);
@@ -3191,7 +3264,7 @@
       if (!G.paused) { G.acc += dt; const cap = G.online ? 12 : 4; while (G && G.acc >= DT && n < cap) { snapPrev(); step(); n++; if (G) G.acc -= DT; } if (G && !G.online && G.acc > DT) G.acc = DT * 0.999; }
       const t1 = KF_DEBUG ? performance.now() : 0;
       if (G) { if (G.replay) renderReplay(dt); else { const sw = G.paused ? null : lerpIn(G.acc / DT); try { render(dt); } finally { if (sw) lerpOut(sw); } } }
-      if (KF_DEBUG) { const P2 = window.__perf = window.__perf || { step: 0, render: 0, frames: 0, steps: 0 }; P2.step += t1 - t0; P2.render += performance.now() - t1; P2.frames++; P2.steps += n; const t2 = performance.now(); if (raw > 60) (window.__long = window.__long || []).push({ raw: Math.round(raw), step: +(t1 - t0).toFixed(1), render: +(t2 - t1).toFixed(1), n, figs: window.__figPaint || 0, must: window.__figMust || 0, resized: window.__resized || 0 }); window.__figPaint = window.__figMust = window.__resized = 0; }
+      if (KF_DEBUG) { const P2 = window.__perf = window.__perf || { step: 0, render: 0, frames: 0, steps: 0 }; P2.step += t1 - t0; P2.render += performance.now() - t1; P2.frames++; P2.steps += n; const t2 = performance.now(); (window.__frames = window.__frames || []).push([Math.round(raw * 10) / 10, +(t1 - t0).toFixed(1), +(t2 - t1).toFixed(1), n, window.__figPaint || 0, window.__resized || 0, window.__ev || null, G && G.players ? G.players.filter(q => q.kite && q.kite._pechaDraw && q.kite._pechaDraw.length).length : 0, !!(G && G.replay)]); if (window.__frames.length > 20000) window.__frames.shift(); window.__ev = null; window.__figPaint = window.__figMust = window.__resized = 0; }
     }
     else { SFX.menuTick(); SFX.partyUpdate([], false); coverTick(now); }   // music keeps playing on the menus; the roofs fall quiet
     requestAnimationFrame(loop);
@@ -3199,7 +3272,7 @@
   // only touch the DOM when the text actually changed (rebuilding the feed every frame restarted its pop-in animation
   // 60 times a second, which made the messages flicker)
   const htmlCache = {};
-  function setHTML(sel, html) { if (htmlCache[sel] !== html) { htmlCache[sel] = html; $(sel).innerHTML = html; } }
+  function setHTML(sel, html) { if (htmlCache[sel] !== html) { htmlCache[sel] = html; $(sel).innerHTML = html; dbgEv('dom' + sel); } }
   let DPR = 1, CW = innerWidth, CH = innerHeight, UI = 1, HUD_TOP = 64;
   // the device's safe areas (notch, rounded corners, Android gesture bar), measured from the CSS (--sa-* in index.css)
   const SAFE = { t: 0, r: 0, b: 0, l: 0 };
@@ -3421,6 +3494,7 @@
       G.net.byId.set(q.id, p); G.players.push(p);
     });
     G.players.forEach(spawn);
+    for (const q of G.players) warmKite(q.entry || (q.kite && q.kite.entry)); refillKati();
     G.viewers = G.players.filter(p => p.ctrl === 'human1');
     if (!G.viewers.length) { G = null; return; }
     if (st.teams) { G.teams = true; const me = teamOf(G.viewers[0]); G.teamNames = me ? ['Their team', 'Your team'] : ['Your team', 'Their team']; }

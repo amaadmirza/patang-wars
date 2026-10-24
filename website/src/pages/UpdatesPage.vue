@@ -20,12 +20,17 @@ export default {
   name: 'UpdatesPage',
   setup() {
     const releases = [
+      { v: '7.2', title: 'Smooth pechas, steady kites', changes: [
+        'No more freezes in the middle of a pecha: the people on the roofs and the street kids are drawn far more efficiently.',
+        'Your kite keeps its shape: tunka, khainch and steering no longer twist and bend it out of shape.',
+        'A new Basant page on this site, with the patang dictionary.'
+      ] },
       { v: '7.1', title: 'Kites that fly like paper', changes: [
         'Left alone, your kite now turns slowly by itself like a real patang (about a turn every two seconds); press FLY when the nose points your way. You can switch it off in Settings.',
         'Kites are drawn as bowed paper sails: the wings bend back under load, the kite banks into turns, rocks in the gusts and its corners flutter.',
         'A slack line now hangs in a real curve and straightens when you pull.',
         'Zoom on phones is a slider on the left edge: drag up to zoom in, down to zoom out.',
-        'Smoother pechas: no more chain of stutters after one slow frame, no freeze when the camera zooms onto a fight, and sharper graphics on phones (never below 1x).',
+        'Smoother pechas and sharper graphics on phones.',
         'No more jump from the splash screen to the home screen.',
         'Retired: the Saudi Arabia flag kite and the Pipa, Raia/Wau, Box, Bird and Star kites. Anyone who bought one got the full price back in coins.'
       ] },

@@ -1,6 +1,6 @@
 {
   "name": "kite-fight",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "private": true,
   "description": "Bo Kata! - Basant rooftop kite fighting. Node server: serves the built game and keeps players' records.",
   "license": "UNLICENSED",

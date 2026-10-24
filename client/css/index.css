@@ -1172,9 +1172,15 @@ input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
 @media (orientation:portrait) and (max-width:700px){.hub-gear{top:max(12px,calc(env(safe-area-inset-top) + 8px));left:50%;right:auto;translate:-50% 0}}
 /* v6.3: in a pecha the two buttons that win it light up (and pulse red while you are being cut) */
 #touch.pecha [data-a="in"],#touch.pecha [data-a="out"]{box-shadow:0 0 0 3px #7bdff2,0 0 18px rgba(123,223,242,.6)}
-#touch.pecha.losing [data-a="in"],#touch.pecha.losing [data-a="out"]{animation:pecha-pulse .6s ease-in-out infinite alternate}
-@keyframes pecha-pulse{from{box-shadow:0 0 0 3px #ff5d73,0 0 10px rgba(255,93,115,.5)}to{box-shadow:0 0 0 5px #ff5d73,0 0 26px rgba(255,93,115,.9)}}
-@media (prefers-reduced-motion:reduce){#touch.pecha.losing [data-a]{animation:none}}
+/* v7.2: the "you're losing" pulse used to animate a big blurred box-shadow - repainted every frame on top of the game, on
+   phones, during the very pecha it was about. The glow is now drawn once and only its opacity animates (GPU, no repaint). */
+#touch.pecha.losing [data-a="in"],#touch.pecha.losing [data-a="out"]{box-shadow:0 0 0 4px #ff5d73;position:relative}
+#touch.pecha.losing [data-a="in"]::after,#touch.pecha.losing [data-a="out"]::after{content:"";position:absolute;inset:-4px;border-radius:inherit;box-shadow:0 0 22px 6px rgba(255,93,115,.85);pointer-events:none;will-change:opacity;animation:pecha-glow .6s ease-in-out infinite alternate}
+@keyframes pecha-glow{from{opacity:.25}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){#touch.pecha.losing [data-a]::after{animation:none}}
+/* v7.2: no live blur behind the match HUD on any device (it re-blurred the moving sky every frame); slightly more solid instead */
+body.in-match .hud-bar,body.in-match #score,body.in-match #feed div,body.in-match #pause,body.in-match #tut{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+body.in-match .hud-bar{background:rgba(12,18,32,.78)}body.in-match #score{background:rgba(12,18,32,.8)}body.in-match #feed div{background:rgba(12,18,32,.74)}
 #rotate #rotHome{margin-top:10px;pointer-events:auto}
 /* SQA: touch targets >= 36 px, portrait phones show every event without sideways scrolling */
 .hub .stage-arrow{width:44px;height:36px}

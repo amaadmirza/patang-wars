@@ -2,7 +2,7 @@
   <div class="wrap fq">
     <header class="page-head">
       <h1>Questions</h1>
-      <p class="lede">The things people ask first. Something else? The game's How to play screen covers every control.</p>
+      <p class="lede">What fliers ask us most. For every control, open How to play in the game or on this site.</p>
     </header>
     <div class="fq-list">
       <details v-for="(f, i) in faqs" :key="i" class="fq-item" :open="i === 0">
@@ -18,15 +18,17 @@ export default {
   name: 'FaqPage',
   setup() {
     const faqs = [
-      { q: 'Is Bo Kata! free?', a: ['Yes. Every mode is free and 83 kites are free from your first match. Other kites, strings, reels and fliers are bought with coins you win by playing. There is no real-money shop.'] },
-      { q: 'Does it work without internet?', a: ['The Android app works fully offline, with everything saved on the phone. In a browser, the game works from its server; online rooms and the weekly leaderboard need that server.'] },
-      { q: 'My line keeps getting cut. What am I doing wrong?', a: ['Probably holding still. A still line loses a pecha. Check your card in the top-left: if you are on top, hold DHEEL; if you are below, hold KHAINCH. Add a quick tap of FLY for a jhatka.', 'In the game\'s own test, the right move won 69% of pechas and holding still won 22%.'] },
-      { q: 'How do I zoom on a phone?', a: ['Drag the slider on the left edge of the screen: up to zoom in, down to zoom out. You can also tap + and − at its ends, or pinch the sky with two fingers. Your zoom is remembered.'] },
-      { q: 'The game feels slow on my phone.', a: ['Open Settings, then Display, and choose Battery saver. It keeps the sharpness at a steady level and switches off the heavier glow effects. On Auto the game adjusts by itself but never drops below one pixel per screen point.'] },
-      { q: 'A kite I bought is gone.', a: ['In version 7.1 the Saudi Arabia flag kite and the Pipa, Raia/Wau, Box, Bird and Star kites were retired. If you owned any, the full price came back as coins and a message told you so. If you were flying one, you now have a starter kite selected.'] },
-      { q: 'Will my coins and kites survive an update?', a: ['Yes. A new Android build installs over the old one and keeps everything, as long as both builds are signed with the same key. On a server, player records live outside the game folder, so unzipping a new version doesn\'t touch them. Settings, then Profile has a backup code for moving to another phone or browser.'] },
-      { q: 'Can people cheat online?', a: ['The server decides every cut, the score, the clock and who wins. Each player only sends their own kite, and the server checks its speed, line length and position.'] },
-      { q: 'Is there an iPhone app?', a: ['Not yet: the app is built for Android only for now. On an iPhone you can play in Safari, held sideways.'] }
+      { q: 'Is Bo Kata! free?', a: ['Yes, completely. There are no ads and no real-money shop. 83 kites are free from your first match; the rest, along with strings, reels and fliers, you buy with coins you win by playing.'] },
+      { q: 'Does it need the internet?', a: ['The Android app plays everything offline: Festival, Duel, Two players, Mohalla, the shop and your collection, all saved on your phone. Online rooms with friends need the browser game.'] },
+      { q: 'My line keeps getting cut. What am I doing wrong?', a: ['Probably holding still: in a pecha the string that moves does the cutting. Look at your card in the corner. If you are on top, hold DHEEL; if you are underneath, hold KHAINCH, and add a quick tap of FLY for a jhatka.', 'In the game\'s own test, the right move won 69% of pechas and holding still won 22%.'] },
+      { q: 'Why does my kite turn by itself?', a: ['Like a real patang, a kite left alone on its line slowly turns. Wait until its nose points where you want to go, then press FLY: it shoots straight that way. If you prefer a kite that stays still, switch off Settings, General, Kite turns when left alone.'] },
+      { q: 'How do I zoom on a phone?', a: ['Drag the slider on the left side of the screen: up to zoom in, down to zoom out. Tap + or − at its ends, or pinch the sky with two fingers. The game remembers your zoom.'] },
+      { q: 'How do I get more kites?', a: ['Win coins: every cut, every kite you bring home and every win pays. Claim the daily login and the free gift every four hours, finish the daily challenge, and beat the Mohalla career. Crates in the Shop always give you a kite you don\'t have yet.'] },
+      { q: 'The game feels slow on my phone.', a: ['Open Settings, Display, and choose Battery saver. It switches off the heavier effects and keeps the picture at a steady sharpness.'] },
+      { q: 'A kite I bought is gone.', a: ['In version 7.1 the Saudi Arabia flag kite and the Pipa, Raia/Wau, Box, Bird and Star kites were retired. Everyone who owned one got the full price back in coins, with a message the next time they opened the game.'] },
+      { q: 'Will I lose my coins when I update?', a: ['Not when you install the new version over the old one. If Android says "App not installed" and you have to uninstall first, the coins saved on that phone are lost, so install updates over the top whenever you can.'] },
+      { q: 'Is it OK for children?', a: ['There are no ads, no purchases with real money and no open chat: in online rooms players can only send ready-made quick-chat phrases like "Nice cut!".'] },
+      { q: 'Is there an iPhone app?', a: ['Not yet. On an iPhone you can play the browser game in Safari, holding the phone sideways.'] }
     ];
     return { faqs };
   }

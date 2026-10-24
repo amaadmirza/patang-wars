@@ -5,20 +5,19 @@
       <div class="wrap sf-grid">
         <div class="sf-brand">
           <img src="brand/logo.svg" alt="Bo Kata! Cut, loot, rule the sky." width="220" height="160" />
-          <p>Basant ka asli muqabla. A rooftop kite-fighting game made in Pakistan, version {{ config.version }}.</p>
+          <p>Basant ka asli muqabla. A rooftop kite-fighting game made in Pakistan for everyone who grew up on a chhat. Version {{ config.version }}.</p>
         </div>
-        <nav class="sf-col" aria-label="Game">
-          <h2>Game</h2>
-          <router-link to="/how-to-play">How to play</router-link>
+        <nav class="sf-col" aria-label="The game">
+          <h2>The game</h2>
+          <router-link to="/how-to-play">How to play and tips</router-link>
           <router-link to="/kites">All kites</router-link>
           <router-link to="/modes">Modes and skies</router-link>
           <router-link to="/updates">What's new</router-link>
         </nav>
-        <nav class="sf-col" aria-label="Get the game">
-          <h2>Get the game</h2>
-          <a :href="config.playUrl">Play in your browser</a>
-          <router-link to="/download">Android app</router-link>
-          <router-link to="/download#host">Host a server for friends</router-link>
+        <nav class="sf-col" aria-label="More">
+          <h2>More</h2>
+          <router-link to="/basant">Basant and the patang dictionary</router-link>
+          <router-link to="/download">Download for Android</router-link>
           <router-link to="/faq">Questions</router-link>
           <router-link to="/privacy">Privacy</router-link>
         </nav>

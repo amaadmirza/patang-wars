@@ -58,6 +58,13 @@
       </div>
     </section>
 
+    <section class="hw-sec" aria-labelledby="hw-tips">
+      <h2 id="hw-tips">Ustad tips</h2>
+      <ul class="hw-tips">
+        <li v-for="t in tips" :key="t.title"><h3>{{ t.title }}</h3><p>{{ t.text }}</p></li>
+      </ul>
+    </section>
+
     <section class="hw-sec hw-two" aria-labelledby="hw-loot">
       <div>
         <h2 id="hw-loot">Loot</h2>
@@ -126,10 +133,20 @@ export default {
       { how: 'Khainch with jhatkas', pct: 53 },
       { how: 'Dheel on top, khainch below', pct: 69, best: true }
     ];
+    const tips = [
+      { title: 'Let it turn, then pull', text: 'Take your hands off and a patang slowly turns by itself. Watch the nose, and the moment it points where you want to go, press FLY. It is faster than steering and it is how real fliers aim.' },
+      { title: 'Fight from above', text: 'Climb over a rival before you cross their line. From on top, a long dheel does the cutting for you while they struggle underneath.' },
+      { title: 'Never hold still', text: 'In a pecha the moving string cuts. If you are underneath, khainch hard; if you are losing, a jhatka or two buys you the moment you need.' },
+      { title: 'Watch your line wear', text: 'Your card in the corner shows tension and line wear. A worn line goes quickly, so back out of a bad pecha the way you came in, and fight again later.' },
+      { title: 'Pick the kite for the wind', text: 'A patang is quick and twitchy, best on calm days. On a gusty sky like Monsoon Clouds or Karachi Seaside, a tukkal stays steadier.' },
+      { title: 'Pick your string', text: 'Glass manjha is a fine all-rounder. Nylon barely cuts but almost never snaps; the sharpest strings cut fastest but are fragile. Buy them in the Shop with coins you win.' },
+      { title: 'Loot low and fast', text: 'A cut kite falls with the wind. Sweep your line through it or its trailing string before it reaches the street, then khainch it home before the kids grab it.' },
+      { title: 'Help your mohalla', text: 'In team matches, call "Help me!" from quick chat and a team-mate joins your pecha. Your team\'s strings never cut each other.' }
+    ];
     const ranks = [['Naya', 0], ['Shagird', 400], ['Patangbaaz', 1200], ['Pecha Baaz', 2600], ['Ustad', 4800], ['Khalifa', 8000]];
     const R = game.rewards, coins = R.login.filter(d => d.coins).map(d => d.coins);
     const loginLine = `${coins[0]} to ${coins[coins.length - 1]} coins over six days and a free Rare Crate on day seven`;
-    return { controls, winRates, ranks, pay: R.pay, start: R.start, loginLine };
+    return { controls, winRates, tips, ranks, pay: R.pay, start: R.start, loginLine };
   }
 };
 </script>
@@ -140,6 +157,12 @@ export default {
 .hw-two { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(20px, 4vw, 48px); align-items: start; }
 .hw-three { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(20px, 4vw, 40px); }
 @media (max-width: 860px) { .hw-two, .hw-three { grid-template-columns: 1fr; } }
+.hw-tips { list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 40px; }
+.hw-tips li { position: relative; padding: 14px 0 12px 36px; border-top: 1px solid var(--surface-line); }
+.hw-tips li::before { content: ''; position: absolute; left: 6px; top: 22px; width: 13px; height: 13px; transform: rotate(45deg); background: var(--genda); box-shadow: 0 0 0 2px var(--jamun-soft); border-radius: 1px; }
+.hw-tips h3 { margin: 0 0 4px; }
+.hw-tips p { margin: 0; color: var(--text-soft); }
+@media (max-width: 760px) { .hw-tips { grid-template-columns: 1fr; } }
 .hw-fig { margin: 0; }
 .hw-fig img { width: 100%; height: auto; border-radius: var(--radius-m); box-shadow: 0 0 0 1px var(--surface-line); }
 .hw-fig figcaption { font-size: var(--t-sm); color: var(--text-soft); margin-top: 8px; }

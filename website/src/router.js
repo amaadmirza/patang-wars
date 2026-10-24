@@ -7,15 +7,17 @@ import DownloadPage from './pages/DownloadPage.vue';
 import UpdatesPage from './pages/UpdatesPage.vue';
 import FaqPage from './pages/FaqPage.vue';
 import PrivacyPage from './pages/PrivacyPage.vue';
+import BasantPage from './pages/BasantPage.vue';
 import NotFoundPage from './pages/NotFoundPage.vue';
 
 export const routes = [
   { path: '/', name: 'home', component: HomePage, meta: { title: 'Rooftop kite fighting' } },
   { path: '/kites', name: 'kites', component: KitesPage, meta: { title: 'Kites' } },
+  { path: '/basant', name: 'basant', component: BasantPage, meta: { title: 'Basant and the patang dictionary' } },
   { path: '/how-to-play', name: 'how', component: HowToPlayPage, meta: { title: 'How to play' } },
   { path: '/modes', name: 'modes', component: ModesPage, meta: { title: 'Modes and skies' } },
-  { path: '/download', name: 'download', component: DownloadPage, meta: { title: 'Play and download' } },
-  { path: '/updates', name: 'updates', component: UpdatesPage, meta: { title: 'Updates' } },
+  { path: '/download', name: 'download', component: DownloadPage, meta: { title: 'Download' } },
+  { path: '/updates', name: 'updates', component: UpdatesPage, meta: { title: "What's new" } },
   { path: '/faq', name: 'faq', component: FaqPage, meta: { title: 'Questions' } },
   { path: '/privacy', name: 'privacy', component: PrivacyPage, meta: { title: 'Privacy' } },
   { path: '/:pathMatch(.*)*', name: 'missing', component: NotFoundPage, meta: { title: 'Not found' } }

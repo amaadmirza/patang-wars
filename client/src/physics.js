@@ -24,13 +24,13 @@
       this.shear = o.shear ?? 0.15;   // power-law exponent
       this.seed = o.seed ?? 0;
     }
-    at(p, t) {
+    at(p, t, out) {   // out (optional): an array to write into instead of making a new one (no garbage in hot loops)
       const h = Math.max(p[2], 2), s0 = this.speed * Math.pow(h / 10, this.shear);
       const k = this.seed;
       const g = (Math.sin(0.7 * t + k) + 0.6 * Math.sin(1.9 * t + 0.11 * p[0] + 2 * k) + 0.3 * Math.sin(4.3 * t + 0.2 * p[1])) / 1.9;
       const s = s0 * (1 + this.gust * g);
       const a = this.dir + 0.15 * this.gust * Math.sin(0.5 * t + 0.05 * p[1] + k);
-      return [Math.cos(a) * s, Math.sin(a) * s, 0.15 * this.gust * s * Math.sin(1.3 * t + k)];
+      const r = out || [0, 0, 0]; r[0] = Math.cos(a) * s; r[1] = Math.sin(a) * s; r[2] = 0.15 * this.gust * s * Math.sin(1.3 * t + k); return r;
     }
   }
 
